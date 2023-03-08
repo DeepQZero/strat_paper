@@ -3,26 +3,26 @@ from numba import njit
 import pickle
 from lib import dynamics
 
+
 class Env:
     GEO = dynamics.GEO
     BASE_VEL_Y = dynamics.BASE_VEL_Y
 
     def __init__(self,
                  step_length=21600,
-                 # max_turns=4*28
+                 max_turns=4*28,
                  discretization=60):
         self.CAP_RAD = 1e5
         self.DISCRETIZATION = discretization
         self.UPDATE_LENGTH = step_length / discretization
-        #self.MAX_TURNS = max_turns
+        self.MAX_TURNS = max_turns
         self.caught = None
         self.current_turn = None
         self.unit = None
         self.enemy_base = None
         self.friendly_base = None
-        #self.fuel = None
 
-    def reset(self, state=np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y, # TODO: start state 0 to 5 degrees above x axis
+    def reset(self, state=np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y,
                                    -GEO, 0.0, 0.0, -BASE_VEL_Y,
                                    GEO, 0.0, 0.0, BASE_VEL_Y,
                                    0, 0])) -> np.ndarray:
@@ -31,22 +31,27 @@ class Env:
         self.friendly_base = state[4:8]
         self.enemy_base = state[8:12]
         self.caught = int(state[12])
-        self.current_turn = 0 # TODO CHANGE BACK!!!
-        #self.fuel = 10000
+        self.current_turn = int(state[13])
         return self.det_obs()
 
-    def is_out_bounds(self):
-        radius = np.norm([self.unit[0], self.unit[1], self.unit[2]])
-        if False: #radius < dynamics.GEO:
-            return True
-        else:
-            return False
+    def step(self, action):
+        rotated_thrust = self.decode_action(action)
+        self.unit[2:4] += rotated_thrust
+        self.unit = self.prop_unit(self.unit)
+        self.friendly_base = self.prop_unit(self.friendly_base)
+        self.enemy_base = self.prop_unit(self.enemy_base)
+        self.current_turn += 1
+        if dynamics.distance(self.unit[0:2], self.enemy_base[0:2]) < self.CAP_RAD and self.caught == 0:
+            self.caught = 1
+            print("CAPTURE", self.current_turn)
+        elif self.caught == 1 and dynamics.distance(self.unit[0:2], self.friendly_base[0:2]) < self.CAP_RAD:
+            self.caught = 2
+            print("VICTORY!!!!!", self.current_turn)
+        return self.det_obs(), self.det_reward(), self.is_done(), {}
 
-    def is_backwards(self):
-        if False: #self.unit[0] and self.unit[1] and self.unit[2] and self.unit[4]:
-            return True
-        else:
-            return False
+    def is_out_bounds(self):
+        radius = np.linalg.norm(self.unit[0:2])
+        return (radius < dynamics.GEO - dynamics.GEO_BOUND) or (radius > dynamics.GEO + dynamics.GEO_BOUND)
 
     def det_obs(self) -> np.ndarray:
         """Returns observation by Gym standard."""
@@ -57,40 +62,19 @@ class Env:
         return np.concatenate((unit, friendly_base, enemy_base,
                                [self.caught], [self.current_turn]))
 
-    def unit_obs(self, unit, angle): # TODO: adjust to rotate goal at each step
+    def unit_obs(self, unit, angle):  # TODO: adjust to rotate goal at each step
+        unit_new_x_y = dynamics.rotate(*unit[0:2], -angle)
+        unit = [*unit_new_x_y, *unit[2:]]
         return unit
-        # unit_new_x_y = rotate(*unit[0:2], -angle)
-        # unit = [*unit_new_x_y, *unit[2:]]
-        # return unit
-
-    def step(self, action):
-        rotated_thrust = self.decode_action(action)
-        self.unit[2:4] += rotated_thrust
-        self.unit = self.prop_unit(self.unit)
-        self.friendly_base = self.prop_unit(self.friendly_base)
-        self.enemy_base = self.prop_unit(self.enemy_base)
-        self.current_turn += 1
-        #neg_fuel = self.score_action(action)
-        #self.fuel -= self.score_action(action)
-        if dynamics.distance(self.unit[0:2], self.enemy_base[0:2]) < self.CAP_RAD and self.caught == 0:
-            self.caught = 1
-            print("CAPTURE")
-        elif self.caught == 1 and dynamics.distance(self.unit[0:2], self.friendly_base[0:2]) < self.CAP_RAD:
-            self.caught = 2
-            print("VICTORY!!!!!", self.current_turn)
-        return self.det_obs(), self.det_reward(), self.is_done(), {}
 
     def is_done(self):
-        return self.caught == 2 or self.is_backwards()
-        #return self.current_turn == self.MAX_TURNS or self.caught == 2 or self.fuel <= 0
+        return self.caught == 2 or self.is_out_bounds() or self.current_turn >= self.MAX_TURNS
 
     def det_reward(self):
         if self.caught == 2:
             return 1
         elif self.is_done():
             return 0
-        elif self.is_backwards():
-            return -1 # TODO: adjust
         else:
             return 0
 
@@ -130,8 +114,9 @@ class Env:
 if __name__ == "__main__":
     env = Env()
     for i in range(100000):
-        print(i)
+        if (i % 100) == 0:
+            print(i)
         state = env.reset()
         done = False
         while not done:
-            state, done, reward, info = env.step(np.random.randint(9))
+            state, reward, done, info = env.step(np.random.randint(9))
