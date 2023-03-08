@@ -1,6 +1,9 @@
 from numba import njit
 import numpy as np
 
+GEO = 42.164e6
+BASE_VEL_Y = 3.0746e3
+MU = 3.9860e14
 
 @njit()
 def integrand(pv):
