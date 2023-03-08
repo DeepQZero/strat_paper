@@ -2,9 +2,9 @@ import numpy as np
 from numba import njit
 import pickle
 from lib import dynamics
+import gym
 
-
-class Env:
+class Env(gym.Env):
     GEO = dynamics.GEO
     BASE_VEL_Y = dynamics.BASE_VEL_Y
 
@@ -21,6 +21,8 @@ class Env:
         self.unit = None
         self.enemy_base = None
         self.friendly_base = None
+        self.action_space = gym.spaces.Discrete(9)
+        self.observation_space = gym.spaces.Box(-1000, 1000, shape=(8,))
 
     def reset(self, state=np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y,
                                    -GEO, 0.0, 0.0, -BASE_VEL_Y,
@@ -54,6 +56,13 @@ class Env:
         return (radius < dynamics.GEO - dynamics.GEO_BOUND) or (radius > dynamics.GEO + dynamics.GEO_BOUND)
 
     def det_obs(self) -> np.ndarray:
+        return np.concatenate((self.norm_unit(self.unit), self.norm_unit(self.friendly_base)[0:2],
+                               [self.caught], [self.current_turn]))
+
+    def norm_unit(self, unit):
+        return np.concatenate((unit[0:2]/dynamics.GEO, unit[2:4]/dynamics.BASE_VEL_Y))
+
+    def det_obs_1(self) -> np.ndarray:
         """Returns observation by Gym standard."""
         angle = np.arctan2(self.enemy_base[1], self.enemy_base[0])
         unit = self.unit_obs(self.unit, angle)
@@ -120,3 +129,5 @@ if __name__ == "__main__":
         done = False
         while not done:
             state, reward, done, info = env.step(np.random.randint(9))
+            print(state.shape)
+            print(state)

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import lib.dynamics as dynamics
 
 import environments.env_1.racetrack
-
+### IMPORTANT: the environment needs det_obs_1 to work correctly!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 def plot_states(states):
     xs, ys = [], []
