@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 import lib.dynamics as dynamics
 
-import environments.env_1.racetrack
-### IMPORTANT: the environment needs det_obs_1 to work correctly!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+import environments.env_1.racetrack_cont
+
 
 def plot_states(states):
     xs, ys = [], []
     for state in states:
-        angle = np.arctan2(state[9], state[8])
+        # angle = np.arctan2(state[9], state[8])
         agent_state = state[0:2]
         xs.append(agent_state[0])
         ys.append(agent_state[1])
@@ -29,20 +29,20 @@ def plot_states(states):
     plt.show()
 
 
-env = environments.env_1.racetrack.Env()
-for i in range(10000):
+env = environments.env_1.racetrack_cont.Env()
+for i in range(1):
     states = []
     state = env.reset()
     states.append(state)
     done = False
     while not done:
-        if np.random.uniform(0, 1) < 1:
-            action = np.random.randint(9)
+        if np.random.uniform(0, 1) < 0:
+            action = np.random.uniform(-np.pi, np.pi, 2)
         else:
-            action = 4
+            action = np.array([0, 0])
         state, rew, done, info = env.step(action)
+        print(state)
         states.append(state)
-    if state[12] == 1:
-        plot_states(states)
+    plot_states(states)
 
 
