@@ -10,8 +10,8 @@ class Env(gym.Env):
     BASE_VEL_Y = dynamics.BASE_VEL_Y
 
     def __init__(self,
-                 step_length=21600,
-                 max_turns=4*28,
+                 step_length=3600,
+                 max_turns=24*28,
                  discretization=60):
         self.CAP_RAD = 1e5
         self.DISCRETIZATION = discretization
@@ -25,7 +25,7 @@ class Env(gym.Env):
         self.action_space = gym.spaces.Discrete(9)
         self.observation_space = gym.spaces.Box(-1000, 1000, shape=(8,))
 
-    def reset(self, state=np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y,
+    '''def reset(self, state=np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y,
                                    -GEO, 0.0, 0.0, -BASE_VEL_Y,
                                    GEO, 0.0, 0.0, BASE_VEL_Y,
                                    0, 0])) -> np.ndarray:
@@ -35,7 +35,19 @@ class Env(gym.Env):
         self.enemy_base = state[8:12]
         self.caught = int(state[12])
         self.current_turn = int(state[13])
-        return self.det_obs()
+        return self.det_obs()'''
+
+    def reset(self, state = None) -> np.ndarray:
+        GEO = dynamics.GEO
+        BASE_VEL_Y = dynamics.BASE_VEL_Y
+        """Resets environment. Returns first observation per Gym Standard."""
+        self.unit = np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y])
+        self.friendly_base = np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y])
+        self.enemy_base = np.array([GEO, 0.0, 0.0, BASE_VEL_Y])
+        self.caught = 0
+        self.current_turn = 0
+        return np.concatenate((self.norm_unit(self.unit), self.norm_unit(self.friendly_base)[0:2],
+                        [self.caught], [self.current_turn]))
 
     def step(self, action):
         rotated_thrust = self.decode_action(action)

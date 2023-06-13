@@ -7,7 +7,7 @@ import gym
 from gym import spaces
 from gym.spaces import Box, Tuple, Discrete
 
-from fuel_env import Environment
+from fuel_env import Environment # TODO CHANGE
 
 
 class ClusterEnvironment(gym.Env):

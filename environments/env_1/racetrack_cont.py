@@ -110,7 +110,7 @@ def test():
             steps += 1
             action = np.random.uniform(-np.pi, np.pi, 2)
             state, reward, done, info = env.step(action)
-            # print(state, np.linalg.norm(state[0:2]))
+            #print(state, np.linalg.norm(state[0:2]))
         # if steps == 1:
         #     print(state)
 
