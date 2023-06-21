@@ -1,53 +1,10 @@
 import numpy as np
-from numba import njit
-import pickle
+
+from lib import dynamics
 
 GEO = 42.164e6
 BASE_VEL_Y = 3.0746e3
 MU = 3.9860e14
-
-
-@njit()
-def integrand(pv):
-    return np.concatenate(
-        (pv[2:4], (-1 * MU / np.linalg.norm(pv[0:2]) ** 3) * pv[0:2]))
-
-
-@njit()
-def runge_kutta(pv, up_len):
-    k1 = up_len * integrand(pv)
-    k1_2 = k1 / 2.0
-    k2 = up_len * integrand(pv + k1_2)
-    k2_2 = k2 / 2.0
-    k3 = up_len * integrand(pv + k2_2)
-    k4 = up_len * integrand(pv + k2)
-    return pv + 1.0 / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
-
-
-@njit()
-def propagate(pv, times, update):
-    for _ in range(times):
-        pv = runge_kutta(pv, update)
-    return pv
-
-
-@njit()
-def distance(pos1, pos2):
-    """Calculates euclidean distance between two positions."""
-    return np.linalg.norm(pos1 - pos2)
-
-
-@njit()
-def rotate(px, py, angle):
-    """counterclockwise rotation in radians."""
-    return [np.cos(angle) * px - np.sin(angle) * py,
-            np.sin(angle) * px + np.cos(angle) * py]
-
-
-@njit()
-def mod_ang(ang, modder):
-    return ((ang + modder/2) % modder) - modder / 2
-
 
 class Env:
     def __init__(self,
@@ -102,10 +59,10 @@ class Env:
         self.current_turn += 1
         neg_fuel = self.score_action(action)
         self.fuel -= self.score_action(action)
-        if distance(self.unit[0:2], self.enemy_base[0:2]) < self.CAP_RAD and self.caught == 0:
+        if dynamics.distance(self.unit[0:2], self.enemy_base[0:2]) < self.CAP_RAD and self.caught == 0:
             self.caught = 1
             print("CAPTURE")
-        elif self.caught == 1 and distance(self.unit[0:2], self.friendly_base[0:2]) < self.CAP_RAD:
+        elif self.caught == 1 and dynamics.distance(self.unit[0:2], self.friendly_base[0:2]) < self.CAP_RAD:
             self.caught = 2
             print("VICTORY!!!!!", self.current_turn)
         return self.det_obs(), self.det_reward(), self.is_done(), {}
@@ -122,7 +79,7 @@ class Env:
             return 0
 
     def prop_unit(self, unit):
-        return propagate(unit[0:4], self.DISCRETIZATION, self.UPDATE_LENGTH)
+        return dynamics.propagate(unit[0:4], self.DISCRETIZATION, self.UPDATE_LENGTH)
 
     def score_action(self, act):
         new_act = self.decode_action(act)
@@ -150,7 +107,7 @@ class Env:
         action[0] *= 1
         action[1] *= 1
         angle = np.arctan2(self.unit[3], self.unit[2])
-        action = rotate(*action, angle)
+        action = dynamics.rotate(*action, angle)
         return action
 
 
@@ -161,4 +118,4 @@ if __name__ == "__main__":
         state = env.reset()
         done = False
         while not done:
-            state, done, reward, info = env.step(np.random.randint(9))
+            state, reward, done, info = env.step(np.random.randint(9))
