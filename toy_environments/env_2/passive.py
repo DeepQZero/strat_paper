@@ -69,7 +69,7 @@ class Env(gym.Env):
         return (radius < dynamics.GEO - dynamics.GEO_BOUND) or (radius > dynamics.GEO + dynamics.GEO_BOUND)
 
     def det_obs(self) -> np.ndarray:
-        return np.concatenate((self.norm_unit(self.unit), self.norm_unit(self.friendly_base)[0:2],
+        return np.concatenate((self.norm_unit(self.unit), self.norm_unit(self.friendly_base), self.norm_unit(self.enemy_base),
                                [self.caught], [self.current_turn]))
 
     def norm_unit(self, unit):
@@ -126,21 +126,44 @@ class Env(gym.Env):
             action = [1.0, 0.0]
         else:
             action = [1.0, 1.0]
-        action[0] *= 1
-        action[1] *= 1
+        action[0] *= 10
+        action[1] *= 10
         angle = np.arctan2(self.unit[3], self.unit[2])
         action = dynamics.rotate(*action, angle)
         return action
 
 
-if __name__ == "__main__":
+def angle_diff(state):
+    x = np.arctan2(state[1], state[0])
+    y = np.arctan2(state[9], state[8])
+    abs_diff = np.abs(x - y)
+    # print(x, y, abs_diff)
+    return min((2 * np.pi) - abs_diff, abs_diff)
+
+
+def main():
+    success_counter = 0
     env = Env()
-    for i in range(100000):
-        if (i % 100) == 0:
-            print(i)
+    for i in range(100):
+        print(i)
         state = env.reset()
         done = False
+        j=0
         while not done:
-            state, reward, done, info = env.step(np.random.randint(9))
-            print(state.shape)
-            print(state)
+            j+= 1
+            if np.random.uniform(0, 1) < 0.95:
+                action = 4
+            else:
+                action = np.random.randint(9)
+            next_state, reward, done, info, = env.step(action)
+            # print(next_state)
+            # print(angle_diff(next_state))
+            state = next_state
+            if angle_diff(next_state) < 0.1:
+                print(i, 'WIN', j)
+                done = True
+    return success_counter
+
+
+if __name__ == "__main__":
+    num_success = main()
