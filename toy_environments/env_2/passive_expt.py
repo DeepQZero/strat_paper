@@ -138,7 +138,8 @@ def main():
     success_list = []  # TODO: Turn into a set to parallelize
     success_counter2 = 0
     success_list2 = []
-    # TODO: Make faster? Parallelize
+    PASSIVE_PROB = 0.25
+    # TODO: Run for a few different probabilities and see results
     for i in range(30000):  # 100000
         print(i, success_counter, len(success_list2))
         state = env.reset()
@@ -146,7 +147,11 @@ def main():
         is_halfway = False
         reached_half = 0
         while not done:
-            state, reward, done, info = env.step(np.random.randint(9))
+            if np.random.uniform(0, 1) <= PASSIVE_PROB:
+                action = 4
+            else:
+                action = np.random.randint(9)
+            state, reward, done, info = env.step(action)
             if not is_halfway and (angle_diff(state) <= np.pi / 16):
                 is_halfway = True
                 success_counter += 1

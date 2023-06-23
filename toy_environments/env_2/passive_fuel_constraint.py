@@ -1,17 +1,31 @@
-import numpy as np
-from tqdm import tqdm
+# TODO: Environment that gives only negative reward for using fuel
+# No reward for winning
+# Try A2C algorithm with stablebaselines
 
+import numpy as np
+import collections
+
+from tqdm import tqdm
+from torch.utils.tensorboard import SummaryWriter
+import torch
+from stable_baselines3 import A2C
+import gym
+from gym.spaces.box import Box
+from gym.spaces.discrete import Discrete
 from lib import dynamics
 
 GEO = 42.164e6
 BASE_VEL_Y = 3.0746e3
 MU = 3.9860e14
 
-class Env:
+
+class Env(gym.Env):
     def __init__(self,
                  step_length=3600,
                  discretization=60,
                  max_turns=24*28):
+        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(1, 14), dtype=np.float32)
+        self.action_space = Discrete(9)
         self.CAP_RAD = 1e5
         self.DISCRETIZATION = discretization
         self.UPDATE_LENGTH = step_length / discretization
@@ -70,18 +84,13 @@ class Env:
         elif self.caught == 1 and dynamics.distance(self.unit[0:2], self.friendly_base[0:2]) < self.CAP_RAD:
             self.caught = 2
             print("VICTORY!!!!!", self.current_turn)
-        return self.det_obs(), self.det_reward(), self.is_done(), {}
+        return self.det_obs(), self.det_reward(action), self.is_done(), {}
 
     def is_done(self):
         return self.current_turn == self.MAX_TURNS #or self.caught == 2 or self.fuel <= 0
 
-    def det_reward(self):
-        if self.caught == 2:
-            return 1
-        elif self.is_done():
-            return 0
-        else:
-            return 0
+    def det_reward(self, action):
+        return -1 * self.score_action(action)
 
     def prop_unit(self, unit):
         return dynamics.propagate(unit[0:4], self.DISCRETIZATION, self.UPDATE_LENGTH)
@@ -132,31 +141,44 @@ def angle_diff1(state):
     return min((2 * np.pi) - abs_diff, abs_diff)
 
 
-def main():
+def test_model(model_name):
     env = Env()
-    success_counter = 0
-    success_list = []  # TODO: Turn into a set to parallelize
-    success_counter2 = 0
-    success_list2 = []
-    # TODO: Make faster? Parallelize
-    for i in range(30000):  # 100000
-        print(i, success_counter, len(success_list2))
-        state = env.reset()
-        done = False
-        is_halfway = False
-        reached_half = 0
-        while not done:
-            state, reward, done, info = env.step(np.random.randint(9))
-            if not is_halfway and (angle_diff(state) <= np.pi / 16):
-                is_halfway = True
-                success_counter += 1
-                success_list.append(state[13])
-                reached_half = state[13]
-            if is_halfway and (angle_diff1(state) <= np.pi / 16):
-                done = True
-                success_counter2 += 1
-                success_list2.append((reached_half, state[13]))
-        print(success_list2)
+    model = A2C.load(model_name)
+    state = env.reset()
+
+    while True:
+        dist = model.policy.get_distribution(torch.unsqueeze(torch.tensor(state), 0))
+        log_prob = dist.log_prob(torch.tensor(list(range(9))))
+        prob = torch.exp(log_prob)
+        print(prob)
+        action, _states = model.predict([state])
+        state, reward, done, info = env.step(action)
+        #print(state, action, done)
+
+
+def learn_model(model_name):
+    env = Env()
+
+    GAMMA = 0.99
+    BATCH_SIZE = 32
+    REPLAY_LENGTH = 10000
+    LEARNING_RATE = 1e-4
+    TARGET_SYNC = 1000
+    REPLAY_START = 10000
+    EPSILON_DECAY_FRAMES = 100000
+    EPSILON_START = 1.0
+    EPSILON_END = 0.1
+    SAVE_MODEL = 100000
+    DEVICE = 'cuda'
+
+    model = A2C("MlpPolicy", env, verbose=1)
+    model.learn(total_timesteps=50000)
+    model.save(model_name)
+
+def main():
+    model_name = "passive_a2c_model"
+    #learn_model(model_name)
+    test_model(model_name)
 
 # Visualize states to make sure things are working correctly
 # Polish the code so it looks better, can be reused more easily
