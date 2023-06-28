@@ -180,8 +180,6 @@ def main():
     #learn_model(model_name)
     test_model(model_name)
 
-# Visualize states to make sure things are working correctly
-# Polish the code so it looks better, can be reused more easily
 
 if __name__ == "__main__":
     main()
