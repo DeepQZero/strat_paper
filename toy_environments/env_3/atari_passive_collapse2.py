@@ -40,25 +40,14 @@ def learn_model(model_name, wrapped=False):
 
 
 def make_env(env_name="ALE/Breakout-v5", render=False, wrapped=False):
-    if render:
-        env = gym.make(env_name, render_mode="human", obs_type="grayscale")
-    else:
-        env = gym.make(env_name, obs_type="grayscale")
-    env = gym.wrappers.normalize.NormalizeObservation(env)
-    #env = sb3.common.atari_wrappers.AtariWrapper(env)
-    if wrapped:
-        env = SparseReward(env)
+    env = gym.make("BreakoutNoFrameskip-v0")
     return env
 
 
 def main():
-    model_name = "breakout_A2C_no_wrapper"
+    model_name = "testing"
     print(model_name)
-    #learn_model(model_name, wrapped=False)
-    test_model(model_name)
-    #model_name = "breakout_A2C_wrapper"
-    #print(model_name)
-    #learn_model(model_name, wrapped=True)
+    learn_model(model_name, wrapped=False)
     #test_model(model_name)
     return
 
