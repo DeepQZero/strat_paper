@@ -1,4 +1,4 @@
-from gym import RewardWrapper
+from gymnasium import RewardWrapper
 
 class SparseReward(RewardWrapper):
     def __init__(self, env):
