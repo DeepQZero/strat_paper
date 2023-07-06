@@ -46,12 +46,12 @@ def test_model(model_name, reward_wrapped, num_episodes=int(1e1)):
             state = state[0]
 
 
-
 def learn_model(model_name, num_timesteps=int(1e6), reward_wrapped=False):
     env = make_env(reward_wrapped=reward_wrapped)
     env.reset()
     tb_log_path = r"./" + model_name + r"_tensorboard/"
-    model = A2C("CnnPolicy", env, verbose=1, device="cpu", tensorboard_log=tb_log_path)
+    # Normalizes images by default - see docs
+    model = A2C("CnnPolicy", env, verbose=1, device="cuda", tensorboard_log=tb_log_path)
     model.learn(total_timesteps=num_timesteps)
     model.save(model_name)
 
@@ -64,20 +64,19 @@ def make_env(env_name="ALE/Breakout-v5", render=False, reward_wrapped=False):
     env = CNNObservation(env)
     if reward_wrapped:
         env = SparseReward(env)
-    #env = gym.wrappers.normalize.NormalizeObservation(env)
     #env = sb3.common.atari_wrappers.AtariWrapper(env)
     #assert check_env(env) is None # check if custom environment is suitable for sb3
     return env
-
 
 
 def main():
     model_name = "breakout_A2C_no_wrapper"
     print(model_name)
     reward_wrapped = False
-    #learn_model(model_name, num_timesteps=int(1e3), reward_wrapped=reward_wrapped)
+    #learn_model(model_name, num_timesteps=int(1e6), reward_wrapped=reward_wrapped)
     # tensorboard --logdir ./model_name_tensorboard/
-    test_model(model_name, reward_wrapped=reward_wrapped, num_episodes=int(1e1))
+    # Evaluate without sparsified rewards?
+    test_model(model_name, reward_wrapped=False, num_episodes=int(1e1))
     return
 
 
