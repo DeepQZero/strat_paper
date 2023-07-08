@@ -141,7 +141,7 @@ def buffer_stats(seen_states):
 if __name__ == "__main__":
     env = Env()
     max_capacity = 10000
-    reset_prob = 0.10
+    reset_prob = 0.10 # To remove stratification, make this 2
     states_seen = collections.deque(maxlen=max_capacity)
     for i in range(100000):
         if (i % 100) == 0:

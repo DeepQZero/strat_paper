@@ -1,7 +1,8 @@
 import collections
+import random
 
 import numpy as np
-import sklearn
+from sklearn.cluster import KMeans
 
 from lib import dynamics
 
@@ -140,30 +141,66 @@ def sample_from_buffer(buffer):
         ind = np.random.randint(0, len(buffer))
         state = buffer[ind]
         radius = np.sqrt(state[0] ** 2) + np.sqrt(state[1] ** 2)
-        if abs(radius - GEO) <= radius_threshold and state[12] < max_turns:
+        if abs(radius - GEO) <= radius_threshold and state[13] < max_turns:
             return (True, state)
     return (False, None)
 
 
+def find_clusters(seen_states):
+    filter_states = []
+    for state in seen_states:
+        radius = np.sqrt(state[0] ** 2) + np.sqrt(state[1] ** 2)
+        if abs(radius - GEO) <= radius_threshold and state[13] < max_turns:
+            filter_states.append(state)
+    process_filter_states = preprocess_states(filter_states)
+    cluster_alg = KMeans(n_clusters=num_clusters)
+    labels = cluster_alg.fit_predict(process_filter_states)
+    labels = labels.tolist()
+    cluster_start_states = [[] for _ in range(num_clusters)]
+    print(min(labels))
+    print(max(labels))
+    print(len(filter_states))
+    print(len(process_filter_states))
+    for i, label in enumerate(labels):
+        cluster_start_states[label].append(filter_states[i])
+    return cluster_start_states
+
+
+def sample_state(start_states):
+    # TODO: Check state validity
+    return random.choice(random.choice(start_states))
+
+
+def preprocess_states(filtered_states):
+    processed_states = []
+    for i in range(len(filtered_states)):
+        processed_states.append(filtered_states[i][:2])
+    return processed_states
+
+
 if __name__ == "__main__":
     env = Env()
+    start_states = [[env.reset()]]
     max_capacity = 10000
     reset_prob = 0.10
     radius_threshold = 10e6
     max_turns = env.MAX_TURNS / 2
+    num_clusters = 50
     states_seen = collections.deque(maxlen=max_capacity)
     for i in range(100000):
         if (i % 100) == 0:
             print(i)
         if (i % 100) == 0 and i > 0:
             buffer_stats(states_seen)
+        if (i % 5000) == 0 and i > 0:
+            start_states = find_clusters(states_seen)
         state = env.reset()
         if i > 0 and np.random.uniform(0, 1) > reset_prob:
-            flag, sampled_state = sample_from_buffer(states_seen)
-            if flag:
-                state = sampled_state
+            sampled_state = sample_state(start_states) # add flag for validity
+            state = sampled_state
         done = False
         while not done:
             state, reward, done, info = env.step(np.random.randint(9))
             states_seen.append(state)
 
+# TODO: Run, visualization
