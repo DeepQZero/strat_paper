@@ -1,10 +1,15 @@
 from numba import njit
 import numpy as np
+## NEED TO INSTALL SCIPY TO USE NP LINALG NORM
 
 GEO = 42.164e6
 BASE_VEL_Y = 3.0746e3
 MU = 3.9860e14
 
+
+# @njit()
+# def norm(x1, y1, x2=0, y2=0):
+#     return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
 
 @njit()
 def integrand(pv):
@@ -59,6 +64,6 @@ def angle_diff(x1, y1, x2, y2):
     return min((2 * np.pi) - abs_diff, abs_diff)
 
 
-if __name__ == "__main__":
-    arr = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
-    print(propagate(arr, 100, 60))
+# if __name__ == "__main__":
+#     arr = np.array([1.0, 2.0, 3.0, 4.0]).astype(np.float64)
+#     print(propagate(arr, 100, 60))
