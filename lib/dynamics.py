@@ -7,9 +7,9 @@ BASE_VEL_Y = 3.0746e3
 MU = 3.9860e14
 
 
-# @njit()
-# def norm(x1, y1, x2=0, y2=0):
-#     return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+@njit()
+def norm(x1, y1, x2=0, y2=0):
+    return ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
 
 @njit()
 def integrand(pv):
