@@ -49,6 +49,7 @@ def mod_ang(ang, modder):
     return ((ang + modder/2) % modder) - modder / 2
 
 
+
 @njit()
 def angle_diff(x1, y1, x2, y2):
     """Calculates absolute value difference between two angles in radians."""
@@ -59,4 +60,5 @@ def angle_diff(x1, y1, x2, y2):
 
 
 if __name__ == "__main__":
-    propagate(np.ndarray([1.0, 2.0, 3.0, 4.0]), 100, 60)
+    arr = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
+    print(propagate(arr, 100, 60))
