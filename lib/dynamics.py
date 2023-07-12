@@ -4,13 +4,14 @@ import numpy as np
 GEO = 42.164e6
 BASE_VEL_Y = 3.0746e3
 MU = 3.9860e14
-GEO_BOUND = GEO # 5e6
+
 
 @njit()
 def integrand(pv):
     # MU = 3.9860e14
     return np.concatenate(
         (pv[2:4], (-3.9860e14 / np.linalg.norm(pv[0:2]) ** 3) * pv[0:2]))
+
 
 @njit()
 def runge_kutta(pv, up_len):
@@ -21,6 +22,7 @@ def runge_kutta(pv, up_len):
     k3 = up_len * integrand(pv + k2_2)
     k4 = up_len * integrand(pv + k2)
     return pv + 1.0 / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
+
 
 @njit()
 def propagate(pv, times, update):
@@ -45,3 +47,16 @@ def rotate(px, py, angle):
 @njit()
 def mod_ang(ang, modder):
     return ((ang + modder/2) % modder) - modder / 2
+
+
+@njit()
+def angle_diff(x1, y1, x2, y2):
+    """Calculates absolute value difference between two angles in radians."""
+    x = np.arctan2(y1, x1)
+    y = np.arctan2(y2, x2)
+    abs_diff = abs(x - y)
+    return min((2 * np.pi) - abs_diff, abs_diff)
+
+
+if __name__ == "__main__":
+    propagate(np.ndarray([1.0, 2.0, 3.0, 4.0]), 100, 60)
