@@ -11,17 +11,19 @@ class Env:
         self.current_turn = None
         self.unit = None
         self.base = None
+        self.return_base = None
 
     def reset(self) -> np.ndarray:
         """Resets environment. Returns first observation per Gym Standard."""
         self.current_turn = 0
         self.unit = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
         self.base = np.array([dyn.GEO, 0.0, 0.0, dyn.BASE_VEL_Y])
+        self.return_base = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
         return self.det_obs()
 
     def det_obs(self) -> np.ndarray:
         """Returns observation by Gym standard."""
-        return np.concatenate((self.unit, self.base, [self.current_turn]))
+        return np.concatenate((self.unit, self.base, self.return_base, [self.current_turn]))
 
     def step(self, action):
         self.unit[2:4] += action
