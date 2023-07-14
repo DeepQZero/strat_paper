@@ -33,7 +33,7 @@ class Env:
         return self.det_obs(), self.det_reward(), self.is_done(), {}
 
     def is_done(self):
-        return self.current_turn == self.MAX_TURNS
+        return self.current_turn == self.MAX_TURNS # or abs(dyn.norm(self.unit[0], self.unit[1]) - dyn.GEO) > dyn.GEO_BOUND
 
     def det_reward(self):
         if self.is_done():

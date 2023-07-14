@@ -5,7 +5,7 @@ import numpy as np
 GEO = 42.164e6
 BASE_VEL_Y = 3.0746e3
 MU = 3.9860e14
-
+GEO_BOUND = 30e6
 
 @njit()
 def norm(x1, y1, x2=0, y2=0):
