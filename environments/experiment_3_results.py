@@ -33,13 +33,15 @@ def main(bound, upper_thrust, lower_thrust, angle_diffs, times):
         # print(xs)
     toc = time.time()
     sample_dict = xs[0]
-    totals = {key: [0, 0] for key in sample_dict}
+    totals = {key: [0, 0, 0] for key in sample_dict}
     for d in xs:
         for key in d:
             totals[key][0] += d[key][0]
             totals[key][1] += d[key][1]
+            if d[key][0] > 0:
+                totals[key][2] += 1
     for key in totals:
-        print(key, totals[key][0] / times, totals[key][1] / times)
+        print(key, totals[key][0] / totals[key][2], totals[key][1]/ totals[key][2], totals[key][2])
     # print('Time: ', toc-tic, ' Bound: ', bound, ' Upper Thrust: ', upper_thrust, ' Lower Thrust: ', lower_thrust,
     #       ' Passive Prop: ', passive_prop,
     #       ' Captures: ', tot_1, ' Returns: ', tot_2, ' Capture Delta V: ', tot_3, ' Return Delta V: ', tot_4)
