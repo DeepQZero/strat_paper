@@ -37,10 +37,10 @@ def main(bound, upper_thrust, lower_thrust, angle_diffs, times):
     totals = {key: [0, 0, 0] for key in sample_dict}
     for d in xs:
         for key in d:
-            totals[key][0] += d[key][0]
-            totals[key][1] += d[key][1]
+            totals[key][0] += d[key][0]  # total turns it was in the zone
+            totals[key][1] += d[key][1]  # total delta v it was in the zone
             if d[key][0] > 0:
-                totals[key][2] += 1
+                totals[key][2] += 1   # times it was in the zone
     stats_dict = {}
     for key in totals:
         first = 0 if totals[key][2] == 0 else totals[key][0] / totals[key][2]
