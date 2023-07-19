@@ -5,13 +5,25 @@ import pickle
 import numpy as np
 
 from lib import dynamics as dyn
-from experiments.section_2.exp_2_3_time.exp_2_3_env import Env
+from experiments.section_3.exp_3_1_reset.exp_3_1_env import Env
 
 
 def one_run(params):
-    bound, upper_thrust, lower_thrust, angle_diffs = params
+    bound, upper_thrust, lower_thrust, angle_diffs, random = params
     env = Env()
-    _ = env.reset()
+    if random:
+        _ = env.reset()
+    else:
+        # rand_choice = np.random.randint(2)
+        # rand_ang = [np.pi/2, 0][rand_choice]
+        rand_ang = np.random.uniform(-np.pi/4, np.pi/4)
+        turn = 0
+        px, py = dyn.rotate(-dyn.GEO, 0, rand_ang)
+        vx, vy = dyn.rotate(0, -dyn.BASE_VEL_Y, rand_ang)
+        unit = np.array([px, py, vx, vy])
+        base = np.array([dyn.GEO, 0.0, 0.0, dyn.BASE_VEL_Y])
+        return_base = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
+        _ = env.det_reset(turn, unit, base, return_base)
     done = False
     fuel_total = 0
     flag_dict = {angle: (0, 0, False) for angle in angle_diffs}
@@ -27,10 +39,10 @@ def one_run(params):
     return flag_dict
 
 
-def main(bound, upper_thrust, lower_thrust, angle_diffs, times):
+def main(bound, upper_thrust, lower_thrust, angle_diffs, times, random):
     tic = time.time()
     with Pool(16) as p:
-        xs = p.map(one_run, [(bound, upper_thrust, lower_thrust, angle_diffs)]*times)  # list of dictionaries
+        xs = p.map(one_run, [(bound, upper_thrust, lower_thrust, angle_diffs, random)]*times)  # list of dictionaries
         # print(xs)
     toc = time.time()
     sample_dict = xs[0]
@@ -58,10 +70,13 @@ def main2():
         ANGLE_DIFFS = [round(np.pi/8 * i, 2) for i in range(1, 8)]
         LOWER_THRUST = 0
         BOUND = 1e5
-        one_data = main(BOUND, UPPER_THRUST, LOWER_THRUST, ANGLE_DIFFS, TIMES)
+        one_data = main(BOUND, UPPER_THRUST, LOWER_THRUST, ANGLE_DIFFS, TIMES, True)
         pickle_dict[UPPER_THRUST] = one_data
-    with open('exp_2_3_data.pkl', 'wb') as f:
+    with open('exp_3_1_data.pkl', 'wb') as f:
         pickle.dump(pickle_dict, f)
+    # two_data = main(BOUND, UPPER_THRUST, LOWER_THRUST, ANGLE_DIFFS, TIMES, False)
+    # with open('exp_3_1_2_data.pkl', 'wb') as f:
+    #     pickle.dump(pickle_dict, f)
 
 
 if __name__ == "__main__":
