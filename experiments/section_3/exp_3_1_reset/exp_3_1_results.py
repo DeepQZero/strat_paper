@@ -8,76 +8,83 @@ from lib import dynamics as dyn
 from experiments.section_3.exp_3_1_reset.exp_3_1_env import Env
 
 
-def one_run(params):
-    bound, upper_thrust, lower_thrust, angle_diffs, random = params
+def one_episode(params):
+    """Gets data from one episode."""
+    thrust, zones = params
     env = Env()
-    if random:
-        _ = env.reset()
-    else:
-        # rand_choice = np.random.randint(2)
-        # rand_ang = [np.pi/2, 0][rand_choice]
-        rand_ang = np.random.uniform(-np.pi/8, np.pi/8)  # note how backwards is bad?
-        turn = 0
-        px, py = dyn.rotate(-dyn.GEO, 0, rand_ang)
-        vx, vy = dyn.rotate(0, -dyn.BASE_VEL_Y, rand_ang)
-        unit = np.array([px, py, vx, vy])
-        base = np.array([dyn.GEO, 0.0, 0.0, dyn.BASE_VEL_Y])
-        return_base = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
-        _ = env.det_reset(turn, unit, base, return_base)
+    # rand_start_ang = np.pi/8
+    # ran = np.random.randint(3)
+    # rand_start_ang = [-np.pi/4, 0, np.pi/4][ran]
+    rand_start_ang = np.random.uniform(-np.pi/8, np.pi/8)  # TODO Change back!
+    temp_mobile = [-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y]
+    px, py = dyn.rotate(temp_mobile[0], temp_mobile[1], rand_start_ang)
+    vx, vy = dyn.rotate(temp_mobile[2], temp_mobile[3], rand_start_ang)
+    mobile = np.array([px, py, vx, vy])
+    ret_base = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
+    cap_base = np.array([dyn.GEO, 0.0, 0.0, dyn.BASE_VEL_Y])
+    time_step = 0
+    total_fuel = 0
+    _ = env.det_reset(mobile, ret_base, cap_base, time_step, total_fuel)
     done = False
     fuel_total = 0
-    flag_dict = {angle: (0, 0, False) for angle in angle_diffs}
+    zone_dict = {angle: (0, 0, False) for angle in zones}
     while not done:
-        action = np.random.uniform(lower_thrust, upper_thrust, 2)
-        fuel_total += dyn.norm(action[0], action[1])
-        state, reward, done, info = env.step(action)
-        angle = dyn.angle_diff(state[0], state[1], state[4], state[5])
-        for key in flag_dict:
-            if not flag_dict[key][2]:  # not reached desired angle
-                if key - np.pi/8 < angle < key:  # TODO make bounds
-                    flag_dict[key] = (state[12], fuel_total, True)
-    return flag_dict
+        rand_thrust = np.random.uniform(0, thrust)
+        rand_angle = np.random.uniform(0, 2 * np.pi)
+        rand_act = np.array([np.cos(rand_angle), np.sin(rand_angle)]) * rand_thrust
+        fuel_total += dyn.vec_norm(rand_act)
+        state, reward, done, info = env.step(rand_act)
+        zone = dyn.abs_angle_diff(state[0:2], state[8:9])
+        for zone_key in zone_dict:
+            if not zone_dict[zone_key][2]:
+                if (zone_key - np.pi/8 < zone < zone_key) and \
+                        abs(dyn.vec_norm(state[0:2]) - dyn.GEO) < 5e6:
+                    zone_dict[zone_key] = (state[12], fuel_total, True)
+    return zone_dict
 
 
-def main(bound, upper_thrust, lower_thrust, angle_diffs, times, random):
+def get_data(thrust, zones, episodes):
+    """Gets experiment data and returns dictionary of polished data."""
+    # get experiment raw data
     tic = time.time()
     with Pool(16) as p:
-        xs = p.map(one_run, [(bound, upper_thrust, lower_thrust, angle_diffs, random)]*times)  # list of dictionaries
-        # print(xs)
+        all_data = p.map(one_episode, [(thrust, zones)]*episodes)
     toc = time.time()
-    sample_dict = xs[0]
-    totals = {key: [0, 0, 0] for key in sample_dict}
-    for d in xs:
-        for key in d:
-            totals[key][0] += d[key][0]  # total first turns it was in the zone
-            totals[key][1] += d[key][1]  # total delta v it was in the zone
-            if d[key][0] > 0:
-                totals[key][2] += 1   # times it was in the zone
-    stats_dict = {}
-    for key in totals:
-        first = 0 if totals[key][2] == 0 else totals[key][0] / totals[key][2]
-        second = 0 if totals[key][2] == 0 else totals[key][1]/ totals[key][2]
-        third = totals[key][2]
-        small_dict = {'first': first, 'second': second, 'third': third}
-        stats_dict[key] = small_dict
-    return stats_dict
+
+    # total episode data
+    zone_totals = {zone_key: {'first_tot': 0, 'fuel_tot': 0, 'count': 0}
+                   for zone_key in zones}
+    for episode_data in all_data:
+        for zone_key in zones:
+            zone_totals[zone_key]['first_tot'] += episode_data[zone_key][0]
+            zone_totals[zone_key]['fuel_tot'] += episode_data[zone_key][1]
+            if episode_data[zone_key][2]:
+                zone_totals[zone_key]['count'] += 1
+
+    # compute statistics
+    zone_stats = {}
+    for zone_key in zones:
+        avg_first = 0 if zone_totals[zone_key]['count'] == 0 else \
+            zone_totals[zone_key]['first_tot'] / zone_totals[zone_key]['count']
+        avg_thrust = 0 if zone_totals[zone_key]['count'] == 0 else \
+            zone_totals[zone_key]['fuel_tot'] / zone_totals[zone_key]['count']
+        num_entrances = zone_totals[zone_key]['count']
+        zone_stats[zone_key] = {'avg_first': avg_first, 'avg_thrust': avg_thrust, 'num_entrances': num_entrances}
+    print('Time: ', toc-tic, ' Thrust: ', thrust)
+    return zone_stats
 
 
-def main2():
-    pickle_dict = {}
-    TIMES = 1000
-    for UPPER_THRUST in [10, 5, 2, np.sqrt(2), 1]:
-        ANGLE_DIFFS = [round(np.pi/8 * i, 2) for i in range(1, 8)]
-        LOWER_THRUST = 0
-        BOUND = 1e5
-        one_data = main(BOUND, UPPER_THRUST, LOWER_THRUST, ANGLE_DIFFS, TIMES, True)
-        pickle_dict[UPPER_THRUST] = one_data
-    with open('exp_3_1_data.pkl', 'wb') as f:
-        pickle.dump(pickle_dict, f)
-    # two_data = main(BOUND, UPPER_THRUST, LOWER_THRUST, ANGLE_DIFFS, TIMES, False)
-    # with open('exp_3_1_2_data.pkl', 'wb') as f:
-    #     pickle.dump(pickle_dict, f)
+def main_exp():
+    """"Main experiment function."""
+    data_dict = {}
+    episodes = int(1e4)
+    zones = [round(np.pi/8 * i, 2) for i in range(1, 8)]
+    for thrust in [0.5, 1, 2, 5, 10]:
+        data = get_data(thrust, zones, episodes)
+        data_dict[thrust] = data
+    with open('exp_3_1_tmp12_data.pkl', 'wb') as f:
+        pickle.dump(data_dict, f)
 
 
 if __name__ == "__main__":
-    main2()
+    main_exp()

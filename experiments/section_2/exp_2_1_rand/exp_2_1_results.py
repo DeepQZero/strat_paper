@@ -9,6 +9,7 @@ from experiments.section_2.exp_2_1_rand.exp_2_1_env import Env
 
 
 def one_episode(params):
+    """Gets data from one episode."""
     thrust, bound = params
     env = Env()
     _ = env.reset()
@@ -18,9 +19,11 @@ def one_episode(params):
     return_turn = 0
     fuel_total = 0
     while not done:
-        random_act = np.random.uniform(-thrust, thrust, 2)
-        fuel_total += dyn.vec_norm(random_act)
-        state, reward, done, info = env.step(random_act)
+        rand_thrust = np.random.uniform(0, thrust)
+        rand_angle = np.random.uniform(0, 2*np.pi)
+        rand_act = np.array([np.cos(rand_angle), np.sin(rand_angle)]) * rand_thrust
+        fuel_total += dyn.vec_norm(rand_act)
+        state, reward, done, info = env.step(rand_act)
         if not is_halfway and (dyn.vec_norm(state[0:2]-state[8:10]) <= bound):
             is_halfway = True
             capture_turn = state[12]
@@ -31,6 +34,7 @@ def one_episode(params):
 
 
 def get_data(thrust, bound, episodes):
+    """Gets experiment data and returns dictionary of polished data."""
     tic = time.time()
     with Pool(16) as p:
         all_data = p.map(one_episode, [(thrust, bound)]*episodes)
@@ -47,16 +51,17 @@ def get_data(thrust, bound, episodes):
             return_counter += 1
             return_delta_v_total += episode_data[2]
     print('Time: ', toc-tic, ' Bound: ', bound, ' Thrust: ', thrust)
-    return {'times': episodes, 'tot_time': toc-tic,
-            'bound': bound, 'upper_thrust': thrust,
-            'captures': capture_counter, 'returns': return_counter,
-            'capture_delta_v': capture_delta_v_total,
-            'return_delta_v': return_delta_v_total}
+    return {'episodes': episodes, 'tot_time': toc-tic,
+            'bound': bound, 'thrust': thrust,
+            'num_captures': capture_counter, 'num_returns': return_counter,
+            'total_capture_delta_v': capture_delta_v_total,
+            'total_return_delta_v': return_delta_v_total}
 
 
 def main_exp():
+    """"Main experiment function."""
     data_dict = {}
-    episodes = int(1e2)
+    episodes = int(1e4)
     for thrust in [0.5, 1, 2, 5, 10]:
         for bound in [1e4, 1e5, 1e6, 1e7]:
             data = get_data(thrust, bound, episodes)

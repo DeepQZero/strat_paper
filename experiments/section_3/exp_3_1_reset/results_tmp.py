@@ -5,14 +5,22 @@ import pickle
 import numpy as np
 
 from lib import dynamics as dyn
-from experiments.section_2.exp_2_1_rand.exp_2_1_env import Env
+from experiments.section_3.exp_3_1_reset.exp_3_1_env import Env
 
 
 def one_episode(params):
     """Gets data from one episode."""
     thrust, zones = params
     env = Env()
-    _ = env.reset()
+    rand_start_ang = np.random.uniform(-np.pi / 8, np.pi / 8)
+    temp_mobile = [-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y]
+    px, py = dyn.rotate(temp_mobile[0], temp_mobile[1], rand_start_ang)
+    vx, vy = dyn.rotate(temp_mobile[2], temp_mobile[3], rand_start_ang)
+    mobile = np.array([px, py, vx, vy])
+    ret_base = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
+    cap_base = np.array([dyn.GEO, 0.0, 0.0, dyn.BASE_VEL_Y])
+    time_step = 0
+    _ = env.det_reset(mobile, ret_base, cap_base, time_step)
     done = False
     fuel_total = 0
     zone_dict = {angle: (0, 0, False) for angle in zones}
@@ -69,7 +77,7 @@ def main_exp():
     for thrust in [0.5, 1, 2, 5, 10]:
         data = get_data(thrust, zones, episodes)
         data_dict[thrust] = data
-    with open('exp_2_3_data.pkl', 'wb') as f:
+    with open('exp_3_1_data.pkl', 'wb') as f:
         pickle.dump(data_dict, f)
 
 

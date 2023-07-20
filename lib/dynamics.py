@@ -1,9 +1,9 @@
 from numba import njit
 import numpy as np
 
-GEO = 42.164e6  # altitude of GEO from center of Earth
-BASE_VEL_Y = 3.0746e3  # absolute value of velocity of base unit at geo
-MU = 3.9860e14  # gravitational constant
+GEO = 42.164e6  # altitude of GEO from center of Earth in km
+BASE_VEL_Y = 3.0746e3  # absolute value of velocity of base unit at geo in km/s
+MU = 3.9860e14  # gravitational constant in km/s^2
 # GEO_BOUND = 30e6  # bound from GEO used for episode termination
 
 
@@ -21,7 +21,7 @@ def vec_norm(vec: np.ndarray) -> float:
 
 @njit()
 def integrand(pv: np.ndarray) -> np.ndarray:
-    """Calculates integrand for use Runge-Kutta"""  # TODO reword
+    """Calculates integrand for use in Runge-Kutta."""  # TODO reword
     return np.concatenate((pv[2:4], (-MU / vec_norm(pv[0:2]) ** 3) * pv[0:2]))
 
 
@@ -52,17 +52,16 @@ def distance(pos1, pos2):  # TODO REMOVE!!!
 
 
 @njit()
-def rotate(px: float, py: float, angle: float) -> np.ndarray:  # TODO REMOVE!!
+def rotate(px: float, py: float, angle: float):  # TODO REMOVE!!
     """Rotates 2D vector counterclockwise in radians."""
-    return [np.cos(angle) * px - np.sin(angle) * py,
-            np.sin(angle) * px + np.cos(angle) * py]
+    return np.cos(angle) * px - np.sin(angle) * py, np.sin(angle) * px + np.cos(angle) * py
 
 
 @njit()
 def vec_rotate(vec: np.ndarray, angle: float) -> np.ndarray:
     """Rotates 2D vector counterclockwise in radians."""
-    return [np.cos(angle)* vec[0] - np.sin(angle) * vec[1],
-            np.sin(angle) * vec[0] + np.cos(angle) * vec[1]]
+    return np.ndarray([np.cos(angle) * vec[0] - np.sin(angle) * vec[1],
+                       np.sin(angle) * vec[0] + np.cos(angle) * vec[1]])
 
 
 @njit()
@@ -77,7 +76,7 @@ def angle_diff(x1, y1, x2, y2):  # TODO Remove!!!
     x = np.arctan2(y1, x1)
     y = np.arctan2(y2, x2)
     abs_diff = abs(x - y)
-    return min((2 * np.pi) - abs_diff, abs_diff)
+    return min(2*np.pi - abs_diff, abs_diff)
 
 
 @njit()

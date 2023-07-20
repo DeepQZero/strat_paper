@@ -9,10 +9,10 @@ class Env:  # TODO RENAME SpaceEnv
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
-        self.time_step = None
         self.mobile = None
         self.cap_base = None
         self.ret_base = None
+        self.time_step = None
 
     def reset(self) -> np.ndarray:
         """Resets environment and returns observation per Gym Standard."""

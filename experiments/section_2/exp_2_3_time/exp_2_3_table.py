@@ -4,26 +4,20 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-unpickled_dict = None
-with open('exp_2_3_data.pkl','rb') as f:
-    unpickled_dict = pickle.load(f)
+with open('exp_2_3_data.pkl', 'rb') as f:
+    data_dict = pickle.load(f)
 
-print(unpickled_dict)
+heatplot_array = np.zeros((7, 5))
+for i, zone in enumerate([round(np.pi/8 * i, 2) for i in range(1, 8)]):
+    for j, thrust in enumerate([0.5, 1, 2, 5, 10]):
+        heatplot_array[i, j] = data_dict[thrust][zone]['num_entrances']
 
-raw_map = np.zeros((7, 5))
-
-for i, UPPER_THRUST in enumerate([1, np.sqrt(2), 2, 5, 10]):
-    small_dict = unpickled_dict[UPPER_THRUST]
-    for j, ANGLE_DIFF in enumerate([round(np.pi/8 * i, 2) for i in range(1, 8)]):
-        raw_map[j, i] = round(small_dict[ANGLE_DIFF]['first'], 1)
-
-colormap = sns.color_palette("Blues", as_cmap=True)
 x = sns.color_palette("mako", as_cmap=True)
-hm = sns.heatmap(raw_map, annot=True, fmt='g', cmap=x, cbar_kws={'label': 'Avg Time'})
-hm.set_xticklabels([1, 1.41, 2, 5, 10])
+hm = sns.heatmap(heatplot_array, annot=True, fmt='g', cmap=x,
+                 cbar_kws={'label': 'Average First Time Step in Zone'})
+hm.set_xticklabels([0.5, 1, 2, 5, 10])
 hm.set_yticklabels([round(np.pi/8 * i, 2) for i in range(1, 8)])
-hm.set_ylabel('Zone Angle')
+hm.set_ylabel('Zone Upper Bound')
 hm.set_xlabel('Max Thrust')
-hm.set_title('Title')
 plt.gca().invert_yaxis()
 plt.show()
