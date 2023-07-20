@@ -24,7 +24,7 @@ for i, UPPER_THRUST in enumerate([1, np.sqrt(2), 2, 5, 10]):
 
 colormap = sns.color_palette("Blues", as_cmap=True)
 x = sns.color_palette("mako", as_cmap=True)
-hm = sns.heatmap(raw_map, annot=True, fmt='g', cmap=x, cbar_kws={'label': 'Avg Time'})
+hm = sns.heatmap(raw_map, annot=True, fmt='g', cmap=x, cbar_kws={'label': 'Avg Counts'})
 hm.set_xticklabels([1, 1.41, 2, 5, 10])
 hm.set_yticklabels([round(np.pi/8 * i, 2) for i in range(1, 8)])
 hm.set_ylabel('Zone Angle')

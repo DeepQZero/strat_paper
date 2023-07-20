@@ -16,7 +16,7 @@ def one_run(params):
     else:
         # rand_choice = np.random.randint(2)
         # rand_ang = [np.pi/2, 0][rand_choice]
-        rand_ang = np.random.uniform(-np.pi/4, np.pi/4)
+        rand_ang = np.random.uniform(-np.pi/8, np.pi/8)  # note how backwards is bad?
         turn = 0
         px, py = dyn.rotate(-dyn.GEO, 0, rand_ang)
         vx, vy = dyn.rotate(0, -dyn.BASE_VEL_Y, rand_ang)
@@ -34,7 +34,7 @@ def one_run(params):
         angle = dyn.angle_diff(state[0], state[1], state[4], state[5])
         for key in flag_dict:
             if not flag_dict[key][2]:  # not reached desired angle
-                if key - np.pi/8 < angle < key:
+                if key - np.pi/8 < angle < key:  # TODO make bounds
                     flag_dict[key] = (state[12], fuel_total, True)
     return flag_dict
 
@@ -49,7 +49,7 @@ def main(bound, upper_thrust, lower_thrust, angle_diffs, times, random):
     totals = {key: [0, 0, 0] for key in sample_dict}
     for d in xs:
         for key in d:
-            totals[key][0] += d[key][0]  # total turns it was in the zone
+            totals[key][0] += d[key][0]  # total first turns it was in the zone
             totals[key][1] += d[key][1]  # total delta v it was in the zone
             if d[key][0] > 0:
                 totals[key][2] += 1   # times it was in the zone

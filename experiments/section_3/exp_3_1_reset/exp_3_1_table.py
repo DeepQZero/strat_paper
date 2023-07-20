@@ -20,7 +20,7 @@ for i, UPPER_THRUST in enumerate([1, np.sqrt(2), 2, 5, 10]):
     small_dict = unpickled_dict[UPPER_THRUST]
     small_dict2 = unpickled_dict2[UPPER_THRUST]
     for j, ANGLE_DIFF in enumerate([round(np.pi/8 * i, 2) for i in range(1, 8)]):
-        raw_map[j, i] = round(small_dict2[ANGLE_DIFF]['third'], 1) - round(small_dict[ANGLE_DIFF]['third'], 1)
+        raw_map[j, i] = round(small_dict2[ANGLE_DIFF]['first'], 1) - round(small_dict[ANGLE_DIFF]['first'], 1)
 
 colormap = sns.color_palette("Blues", as_cmap=True)
 x = sns.color_palette("mako", as_cmap=True)

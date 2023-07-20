@@ -64,7 +64,7 @@ def main(bound, upper_thrust, lower_thrust, passive_prop, times):
 
 def main2():
     pickle_dict = {}
-    TIMES = 100
+    TIMES = 10000
     for UPPER_THRUST in [10, 5, 2, np.sqrt(2), 1]:
         for PASSIVE_PROP in [0, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99, 1.0]:
             LOWER_THRUST = 0

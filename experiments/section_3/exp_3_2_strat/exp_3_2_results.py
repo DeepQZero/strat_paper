@@ -14,8 +14,8 @@ def one_run(params):
     if random:
         _ = env.reset()
     else:
-        rand_choice = np.random.randint(5)
-        rand_ang = [np.pi/2, np.pi/4, 0 -np.pi/4, -np.pi/2][rand_choice]
+        rand_choice = np.random.randint(3)
+        rand_ang = [np.pi/8, 0, -np.pi/8][rand_choice]
         # rand_ang = np.random.uniform(-np.pi/4, np.pi/4)
         turn = 0
         px, py = dyn.rotate(-dyn.GEO, 0, rand_ang)
