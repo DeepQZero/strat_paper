@@ -12,10 +12,10 @@ def one_episode(params):
     """Gets data from one episode."""
     thrust, zones = params
     env = Env()
-    # rand_start_ang = np.pi/8
+    rand_start_ang = 0
     # ran = np.random.randint(3)
     # rand_start_ang = [-np.pi/4, 0, np.pi/4][ran]
-    rand_start_ang = np.random.uniform(-np.pi/8, np.pi/8)  # TODO Change back!
+    # rand_start_ang = np.random.uniform(-np.pi/8, np.pi/8)  # TODO Change back!
     temp_mobile = [-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y]
     px, py = dyn.rotate(temp_mobile[0], temp_mobile[1], rand_start_ang)
     vx, vy = dyn.rotate(temp_mobile[2], temp_mobile[3], rand_start_ang)
@@ -77,9 +77,9 @@ def get_data(thrust, zones, episodes):
 def main_exp():
     """"Main experiment function."""
     data_dict = {}
-    episodes = int(1e4)
+    episodes = int(1e3)
     zones = [round(np.pi/8 * i, 2) for i in range(1, 8)]
-    for thrust in [0.5, 1, 2, 5, 10]:
+    for thrust in [1, 5, 10, 50, 100]:
         data = get_data(thrust, zones, episodes)
         data_dict[thrust] = data
     with open('exp_3_1_tmp12_data.pkl', 'wb') as f:

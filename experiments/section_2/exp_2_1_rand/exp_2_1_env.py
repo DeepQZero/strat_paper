@@ -4,8 +4,8 @@ from lib import dynamics as dyn
 
 
 class Env:  # TODO RENAME SpaceEnv
-    def __init__(self, step_len: int = 3600, dis: int = 60,
-                 max_turns: int = 24*28) -> None:
+    def __init__(self, step_len: int = 10800, dis: int = 180,
+                 max_turns: int = 8*14) -> None:
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns

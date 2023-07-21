@@ -45,7 +45,7 @@ class ClusterEnv:
         dist = dyn.vec_norm(state[0:2])
         in_zone = abs(dist - dyn.GEO) < 5e6
         angle_left_proportion = angle/np.pi
-        fuel_left_proportion = (self.env.MAX_FUEL*10 - state[13]) / (self.env.MAX_FUEL*10)
+        fuel_left_proportion = (self.env.MAX_FUEL - state[13]) / (self.env.MAX_FUEL)
         turn_left_proportion = (self.env.MAX_TURNS - state[12]) / self.env.MAX_TURNS
         good_fuel = angle_left_proportion < fuel_left_proportion
         good_turn = angle_left_proportion < turn_left_proportion

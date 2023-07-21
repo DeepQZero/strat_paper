@@ -66,9 +66,9 @@ def get_data(thrust, bound, passive_prop, episodes):
 def main_exp():
     """"Main experiment function."""
     data_dict = {}
-    episodes = int(1e4)
-    bound = 1e5
-    for thrust in [0.5, 1, 2, 5, 10]:
+    episodes = int(1e3)
+    bound = 1e6
+    for thrust in [1, 5, 10, 50, 100]:
         for passive_prop in [0.0, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]:
             data = get_data(thrust, bound, passive_prop, episodes)
             data_dict[(thrust, passive_prop)] = data

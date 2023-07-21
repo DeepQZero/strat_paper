@@ -64,9 +64,9 @@ def get_data(thrust, zones, episodes):
 def main_exp():
     """"Main experiment function."""
     data_dict = {}
-    episodes = int(1e5)
+    episodes = int(1e4)
     zones = [round(np.pi/8 * i, 2) for i in range(1, 8)]
-    for thrust in [0.5, 1, 2, 5, 10]:
+    for thrust in [1, 5, 10, 50, 100]:
         data = get_data(thrust, zones, episodes)
         data_dict[thrust] = data
     with open('exp_2_3_data.pkl', 'wb') as f:

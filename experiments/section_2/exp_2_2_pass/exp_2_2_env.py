@@ -4,7 +4,7 @@ from lib import dynamics as dyn
 
 
 class Env:
-    def __init__(self, step_length=3600, discretization=60, max_turns=24*28):
+    def __init__(self, step_length=10800, discretization=180, max_turns=8*14):
         self.DISCRETIZATION = discretization
         self.UPDATE_LENGTH = step_length / discretization
         self.MAX_TURNS = max_turns

@@ -4,8 +4,8 @@ from lib import dynamics as dyn
 
 
 class Env:  # TODO RENAME SpaceEnv
-    def __init__(self, step_len: int = 3600, dis: int = 60,
-                 max_turns: int = 12*28, max_fuel=100) -> None:  # TODO Change
+    def __init__(self, step_len: int = 10800, dis: int = 180,
+                 max_turns: int = 8*14, max_fuel=100) -> None:  # TODO Change
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
@@ -50,7 +50,8 @@ class Env:  # TODO RENAME SpaceEnv
 
     def step(self, action: np.ndarray) -> tuple:
         """Advances environment forward one time step, returns Gym signals."""
-        self.mobile[2:4] += action if self.total_fuel < self.MAX_FUEL else np.array([0.0, 0.0])
+        action = np.array([0.0, 0.0]) if self.total_fuel > self.MAX_FUEL else action
+        self.mobile[2:4] += action
         self.total_fuel += dyn.vec_norm(action)
         self.mobile = self.prop_unit(self.mobile)
         self.ret_base = self.prop_unit(self.ret_base)
