@@ -8,10 +8,12 @@ from lib import dynamics as dyn
 from experiments.section_3.exp_3_3_cluster.exp_3_3_env import Env
 
 
-def one_episode(thrust):
+def one_episode(i):
     """Gets data from one episode."""
     MAX_FUEL = 100
     MAX_TURNS = 112
+    thrust = 10
+    np.random.seed()
     env = Env()
     _ = env.reset()
     done = False
@@ -29,9 +31,13 @@ def one_episode(thrust):
         turn_left_proportion = (MAX_TURNS - state[12]) / MAX_TURNS
         good_fuel = angle_left_proportion < fuel_left_proportion
         good_turn = angle_left_proportion < turn_left_proportion
-        # print(angle_left_proportion, fuel_left_proportion, turn_left_proportion)
-        if in_zone and good_fuel and good_turn:
-            print('SUCCESS')
+        # if in_zone and good_fuel and good_turn:
+        #     print(angle_left_proportion, fuel_left_proportion, turn_left_proportion)
+        #     print('SUCCESS', i)
+        #     done = True
+        if dyn.vec_norm(state[0:2] - state[8:10]) < 1e5:
+            print('CAPTURE ', i, fuel_left_proportion)
+            done = True
     return None
 
 
@@ -39,11 +45,11 @@ def main_exp():
     """Gets experiment data and returns dictionary of polished data."""
     # get experiment raw data
     tic = time.time()
-    thrust = 10
-    with Pool(12) as p:
-        _ = p.map(one_episode, [thrust]*1000)
+    with Pool(16) as p:
+        _ = p.map(one_episode, list(range(int(1e5))))
     toc = time.time()
     print(tic-toc)
+
 
 if __name__ == "__main__":
     main_exp()
