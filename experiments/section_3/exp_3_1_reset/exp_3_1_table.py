@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 with open('exp_3_1_tmp10_data.pkl', 'rb') as f:
      data_dict_fixed = pickle.load(f)
 
-with open('exp_3_1_tmp12_data.pkl', 'rb') as f:
+with open('exp_3_1_tmp8_data.pkl', 'rb') as f:
     data_dict_random = pickle.load(f)
 
 # tmp 1 is -np.pi/8 cont
@@ -29,8 +29,8 @@ with open('exp_3_1_tmp12_data.pkl', 'rb') as f:
 heatplot_array = np.zeros((7, 5))
 for i, zone in enumerate([round(np.pi/8 * i, 2) for i in range(1, 8)]):
     for j, thrust in enumerate([0.5, 1, 2, 5, 10]):
-        heatplot_array[i, j] = data_dict_random[thrust][zone]['num_entrances'] - \
-                               data_dict_fixed[thrust][zone]['num_entrances']
+        heatplot_array[i, j] = data_dict_random[thrust][zone]['num_entrances'] # - \
+                               # data_dict_fixed[thrust][zone]['num_entrances']
 
 x = sns.color_palette("mako", as_cmap=True)
 hm = sns.heatmap(heatplot_array, annot=True, fmt='g', cmap=x,
@@ -41,3 +41,4 @@ hm.set_ylabel('Zone Upper Bound')
 hm.set_xlabel('Max Thrust')
 plt.gca().invert_yaxis()
 plt.show()
+
