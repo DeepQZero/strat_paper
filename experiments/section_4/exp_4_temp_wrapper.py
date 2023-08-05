@@ -1,5 +1,5 @@
 import numpy as np
-from exp_4_1_env import Env
+from exp_4_temp_env import Env
 from lib import dynamics as dyn
 
 from sklearn.cluster import KMeans

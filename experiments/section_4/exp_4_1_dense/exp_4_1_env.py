@@ -103,7 +103,9 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
 
     def det_reward(self, action) -> float:
         """Returns reward at current time step."""
-        return self.det_term_rew() + self.det_fuel_rew(action) + self.det_angle_reward()
+        #return self.det_term_rew() + self.det_fuel_rew(action) + self.det_angle_reward()
+        angle_reward = self.det_angle_reward()
+        return self.det_term_rew() + angle_reward
 
     def det_angle_reward(self) -> float:
         angle = dyn.abs_angle_diff(self.mobile[0:2], self.cap_base[0:2])
