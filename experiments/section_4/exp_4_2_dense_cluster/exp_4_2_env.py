@@ -1,22 +1,26 @@
 import numpy as np
 import gymnasium as gym
 from lib import dynamics as dyn
-
+# TODO: Try to render the environment - plot positions with a colorbar
+# condition the color on time
+# TODO: Callback for number of captures
 
 class Env(gym.Env):  # TODO RENAME SpaceEnv
     def __init__(self, step_len: int = 10800, dis: int = 180,
-                 max_turns: int = 8*14, max_fuel=125) -> None:  # TODO determine fuel!!!
+                 max_turns: int = 8*14, max_fuel=125, add_fuel_penalty=True) -> None:  # TODO determine fuel!!!
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
         self.MAX_FUEL = max_fuel
         self.FUEL_MULTIPLIER = 0.1
+        self.SIGMA = 0.01  # Gaussian noise in actions
         self.angle_diff = 1.0
         self.mobile = None
         self.cap_base = None
         self.ret_base = None
         self.time_step = None
         self.total_fuel = None
+        self.add_fuel_penalty = add_fuel_penalty
         self.observation_space = gym.spaces.Box(-1000, 1000, shape=(8,))
         self.action_space = gym.spaces.Box(0, 10.0, shape=(2,))
 
@@ -48,23 +52,13 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
         self.total_fuel = state[13]
         return self.det_obs()
 
-    def det_obs_1(self) -> np.ndarray:
+    def det_obs(self) -> np.ndarray:
         """Returns observation per Gym standard."""
         return np.concatenate((self.mobile, self.ret_base,
                                self.cap_base, [self.time_step], [self.total_fuel]))
 
-    def det_obs(self) -> np.ndarray:
-        """Returns observation per Gym standard."""
-        # distance from GEO, velocity vector, angle from enemy base
-        # rotate observations so the enemy base is always at zero
-        # TODO: rotate if something doesn't work. Maybe rendering
-        mobile_pos = (self.mobile[0:2] - dyn.GEO) / 5e6
-        enemy_pos  = (self.cap_base[0:2] - dyn.GEO) / 5e6
-        mobile_vel = (self.mobile[2:4]) / dyn.BASE_VEL_Y
-        return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [self.time_step], [self.total_fuel]))
-
     def process_action(self, action):
-        angle = action[1] / 5 * np.pi
+        angle = (action[1] / 5 * np.pi) + np.random.normal(0, self.SIGMA)
         return np.array([action[0]*np.cos(angle), action[0]*np.sin(angle)])
 
     def step(self, action: np.ndarray) -> tuple:
@@ -78,6 +72,9 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
         self.cap_base = self.prop_unit(self.cap_base)
         self.time_step += 1
         return self.det_obs(), self.det_reward(action), self.is_done(), False, {}
+
+    def testing(self):
+        return 43.0
 
     def is_done(self) -> bool:
         """Determines if episode has reached termination."""
@@ -95,7 +92,7 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
     def det_term_rew(self) -> float:
         if self.is_capture():
             print("CAPTURE")
-            return 1.0
+            return 10.0
         elif self.is_timeout():
             return 0.0
         else:
@@ -105,6 +102,8 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
         """Returns reward at current time step."""
         #return self.det_term_rew() + self.det_fuel_rew(action) + self.det_angle_reward()
         angle_reward = self.det_angle_reward()
+        if self.add_fuel_penalty:
+            return self.det_term_rew() + self.det_fuel_rew(action) + self.det_angle_reward()
         return self.det_term_rew() + angle_reward
 
     def det_angle_reward(self) -> float:
