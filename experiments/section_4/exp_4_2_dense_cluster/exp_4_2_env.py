@@ -43,14 +43,14 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
         self.total_fuel = total_fuel
         return self.det_obs()
 
-    def det_reset_helper(self, state) -> np.ndarray:
+    def det_reset_helper(self, state) -> tuple:
         """Resets environment deterministically."""
         self.mobile = state[0:4]
         self.ret_base = state[4:8]
         self.cap_base = state[8:12]
         self.time_step = state[12]
         self.total_fuel = state[13]
-        return self.det_obs()
+        return self.det_obs(), None
 
     def det_obs(self) -> np.ndarray:
         """Returns observation per Gym standard."""
