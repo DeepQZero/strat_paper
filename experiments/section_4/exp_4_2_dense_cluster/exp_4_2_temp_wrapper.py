@@ -51,6 +51,7 @@ class ClusterEnv(gym.Env):
         return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [state[12]], [state[13]]))
 
     def step(self, action):
+        # TODO: Do in eighths (0.875, 0.75, ...)
         if ((self.env.MAX_FUEL - self.state[13]) / self.env.MAX_FUEL) < 0.52 and (dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (np.pi/2)):
             action = np.array([0.0, 0.0])
         if ((self.env.MAX_FUEL - self.state[13]) / self.env.MAX_FUEL) < 0.27 and (dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (np.pi/4)):
@@ -179,9 +180,9 @@ class DataCollector:
             self.start_buffer.append(state)
 
     def choose_action(self, state):
-        if np.random.uniform(0, 1) < 0.0 or state[13] > self.MAX_FUEL:
-            rand_act = np.array([0.0, 0.0])
-        elif ((self.MAX_FUEL - state[13]) / self.MAX_FUEL) < 0.52 and (dyn.abs_angle_diff(state[0:2], state[8:10]) > (np.pi/2)):
+        #if np.random.uniform(0, 1) < 0.0 or state[13] > self.MAX_FUEL:
+        #    rand_act = np.array([0.0, 0.0])
+        if ((self.MAX_FUEL - state[13]) / self.MAX_FUEL) < 0.52 and (dyn.abs_angle_diff(state[0:2], state[8:10]) > (np.pi/2)):
             rand_act = np.array([0.0, 0.0])
         else:
             thrust = 10
