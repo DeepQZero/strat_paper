@@ -64,7 +64,8 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
     def step(self, action: np.ndarray) -> tuple:
         """Advances environment forward one time step, returns Gym signals."""
         action = self.process_action(action)
-        #action = np.array([0.0, 0.0]) if (self.total_fuel + dyn.vec_norm(action) > self.MAX_FUEL) else action
+        # DRIFTING
+        action = np.array([0.0, 0.0]) if (self.total_fuel + dyn.vec_norm(action) > self.MAX_FUEL) else action
         self.mobile[2:4] += action
         self.total_fuel += dyn.vec_norm(action)
         self.mobile = self.prop_unit(self.mobile)
@@ -75,7 +76,7 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
 
     def is_done(self) -> bool:
         """Determines if episode has reached termination."""
-        return self.is_capture() or self.is_timeout() or self.is_out_of_fuel()
+        return self.is_capture() or self.is_timeout() #or self.is_out_of_fuel()
 
     def is_capture(self) -> bool:
         return dyn.vec_norm(self.mobile[0:2] - self.cap_base[0:2]) < 5e5
@@ -84,7 +85,7 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
         return self.time_step == self.MAX_TURNS
 
     def is_out_of_fuel(self) -> bool:
-        return (self.MAX_FUEL - self.total_fuel) < (10 * dyn.vec_norm(np.array([1.0, 1.0])))
+        return (self.MAX_FUEL - self.total_fuel) < (1 * dyn.vec_norm(np.array([1.0, 1.0])))
 
     def det_fuel_rew(self, action) -> float:
         return -1 * dyn.vec_norm(action)/self.MAX_FUEL * self.FUEL_MULTIPLIER
@@ -112,8 +113,6 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
         reward = self.angle_diff - new_angle_prop
         self.angle_diff = new_angle_prop
         return reward
-
-
 
     def prop_unit(self, unit: np.ndarray) -> np.ndarray:
         """Propagates a given unit state forward one time step."""

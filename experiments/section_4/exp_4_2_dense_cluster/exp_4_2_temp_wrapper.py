@@ -182,13 +182,13 @@ class DataCollector:
     def choose_action(self, state):
         #if np.random.uniform(0, 1) < 0.0 or state[13] > self.MAX_FUEL:
         #    rand_act = np.array([0.0, 0.0])
-        if ((self.MAX_FUEL - state[13]) / self.MAX_FUEL) < 0.52 and (dyn.abs_angle_diff(state[0:2], state[8:10]) > (np.pi/2)):
-            rand_act = np.array([0.0, 0.0])
-        else:
-            thrust = 10
-            rand_thrust = np.random.uniform(0, thrust)
-            rand_angle = np.random.uniform(0, 2 * np.pi)
-            rand_act = np.array([np.cos(rand_angle), np.sin(rand_angle)]) * rand_thrust
+        for u in [4, 5, 6, 7]:
+            if (((self.MAX_FUEL - state[13]) / self.MAX_FUEL) < ((8-u)*0.125)+0.02) and (dyn.abs_angle_diff(state[0:2], state[8:10]) > (u*np.pi/8)):
+                return np.array([0.0, 0.0])
+        thrust = 10
+        rand_thrust = np.random.uniform(0, thrust)
+        rand_angle = np.random.uniform(0, 2 * np.pi)
+        rand_act = np.array([np.cos(rand_angle), np.sin(rand_angle)]) * rand_thrust
         return rand_act
 
 def main1():
