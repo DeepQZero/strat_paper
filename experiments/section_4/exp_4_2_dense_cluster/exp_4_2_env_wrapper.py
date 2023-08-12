@@ -16,6 +16,8 @@ class ClusterEnv(gym.Env):
         self.CLUSTER_EPIS = cluster_epis
         self.NUM_CLUSTERS = num_clusters
         self.clusters = []
+        # TODO: Make a priority queue instead, add in worse states at the beginning until the queue is full
+        # Once the queue is full, stop adding the poor states and only add good ones.
         self.num_resets = 0
         self.fig_counter = 0
         self.state = None
@@ -48,6 +50,7 @@ class ClusterEnv(gym.Env):
         return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [state[12]], [state[13]]))
 
     def step(self, action):
+        # TODO: Do in eighths (0.875, 0.75, ...)
         if ((self.env.MAX_FUEL - self.state[13]) / self.env.MAX_FUEL) < 0.52 and (dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (np.pi/2)):
             action = np.array([0.0, 0.0])
         if ((self.env.MAX_FUEL - self.state[13]) / self.env.MAX_FUEL) < 0.27 and (dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (np.pi/4)):
@@ -122,7 +125,7 @@ class ClusterEnv(gym.Env):
             self.fig_counter += 1
 
 
-def one_main():
+def main():
     env = ClusterEnv()
     env.hard_reset()
     for i in range(int(1e5)):
@@ -142,7 +145,7 @@ def one_main():
             #if dyn.vec_norm(state[0:2]-state[8:10]) < 1e5:
                 #print("CAPTURE", state)
 
+
 if __name__ == "__main__":
-    with Pool(4) as p:
-        _ = p.map(one_main, list(range(int(1e6))))
+    main()
 

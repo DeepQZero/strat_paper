@@ -16,7 +16,6 @@ def main():
     data_collector = DataCollector()
     env = Env()
     cluster_env = ClusterEnv()
-    buffer_filled = False
     for i in range(int(1e6)):
         if (i % 100) == 0:
             print(i)
@@ -33,9 +32,7 @@ def main():
             rand_act = data_collector.choose_action(state)
             state, reward, done, _, info = env.step(rand_act)
             data_collector.filter_state(state)
-        if len(data_collector.start_buffer) == cluster_env.NUM_CLUSTERS:
-            buffer_filled = True
-        if buffer_filled:
+        if int(len(data_collector.start_buffer)) == int(cluster_env.NUM_CLUSTERS):
             break
 
 

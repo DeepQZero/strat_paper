@@ -76,7 +76,7 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
 
     def is_done(self) -> bool:
         """Determines if episode has reached termination."""
-        return self.is_capture() or self.is_timeout() #or self.is_out_of_fuel()
+        return self.is_capture() or self.is_timeout() or self.is_out_of_fuel()
 
     def is_capture(self) -> bool:
         return dyn.vec_norm(self.mobile[0:2] - self.cap_base[0:2]) < 5e5
