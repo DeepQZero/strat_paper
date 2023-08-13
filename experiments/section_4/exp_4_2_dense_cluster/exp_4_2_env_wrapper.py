@@ -10,7 +10,7 @@ from lib import dynamics as dyn
 
 
 class ClusterEnv(gym.Env):
-    def __init__(self, cluster_epis=10, num_clusters=50): #TODO: decay the number of cluster episodes?
+    def __init__(self, cluster_epis=1000, num_clusters=50): #TODO: decay the number of cluster episodes?
         self.env = Env()
         self.state_buffer = []
         self.CLUSTER_EPIS = cluster_epis
@@ -25,7 +25,7 @@ class ClusterEnv(gym.Env):
         self.action_space = self.env.action_space
 
     def reset(self, seed=None, options=None):
-        if (self.num_resets % self.CLUSTER_EPIS) == 0 and self.num_resets > 0:
+        if (self.num_resets % self.CLUSTER_EPIS) == 0: #and self.num_resets > 0:
             self.cluster()
         if len(self.clusters) == 0:
             state, _ = self.env.reset()
@@ -50,13 +50,11 @@ class ClusterEnv(gym.Env):
         return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [state[12]], [state[13]]))
 
     def step(self, action):
-        # TODO: Do in eighths (0.875, 0.75, ...)
-        if ((self.env.MAX_FUEL - self.state[13]) / self.env.MAX_FUEL) < 0.52 and (dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (np.pi/2)):
-            action = np.array([0.0, 0.0])
-        if ((self.env.MAX_FUEL - self.state[13]) / self.env.MAX_FUEL) < 0.27 and (dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (np.pi/4)):
-            action = np.array([0.0, 0.0])
-        if ((self.env.MAX_FUEL - self.state[13]) / self.env.MAX_FUEL) < 0.14 and (dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (np.pi/8)):
-            action = np.array([0.0, 0.0])
+        # We can't force actions here, will affect PPO
+        '''for u in [4, 5, 6, 7]:
+            if (((self.MAX_FUEL - self.state[13]) / self.MAX_FUEL) < ((8 - u) * 0.125) + 0.02) and (
+                    dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (u * np.pi / 8)):
+                action = np.array([0.0, 0.0])'''
         state, reward, done, _, info = self.env.step(action)
         self.filter_state(state)
         self.state = state
@@ -80,9 +78,9 @@ class ClusterEnv(gym.Env):
         # if in_zone and good_fuel and good_turn:
         #     self.state_buffer.append(state)
         if in_zone and good_fuel and good_turn:
-            print("STATE HAS BEEN APPENDED")
+            #print("STATE HAS BEEN APPENDED")
             distance = dyn.vec_norm(self.state[0:2] - self.state[8:10])
-            print(angle_left_proportion, fuel_left_proportion, turn_left_proportion, distance)
+            #print(angle_left_proportion, fuel_left_proportion, turn_left_proportion, distance)
             self.state_buffer.append(state)
 
     def sample_start_state(self):
@@ -115,7 +113,7 @@ class ClusterEnv(gym.Env):
                 for s in cluster:
                     pos = (dyn.vec_norm(s[0:2]) - dyn.GEO) / 10e6
                     ang = dyn.abs_angle_diff(s[0:2], s[8:10]) / np.pi
-                    print(pos, ang)
+                    #print(pos, ang)
                     big_list1.append(pos)
                     big_list2.append(ang)
             plt.scatter(big_list1, big_list2)
@@ -142,8 +140,8 @@ def main():
                 rand_angle = np.random.uniform(0, 2 * np.pi)
                 rand_act = np.array([np.cos(rand_angle), np.sin(rand_angle)]) * rand_thrust
             state, reward, done, _, info = env.step(rand_act)
-            #if dyn.vec_norm(state[0:2]-state[8:10]) < 1e5:
-                #print("CAPTURE", state)
+            if dyn.vec_norm(state[0:2]-state[8:10]) < 5e5:
+                print("CAPTURE", state)
 
 
 if __name__ == "__main__":

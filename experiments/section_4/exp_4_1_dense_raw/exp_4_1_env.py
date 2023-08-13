@@ -113,7 +113,7 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
         #return self.det_term_rew() + self.det_fuel_rew(action) + self.det_angle_reward()
         angle_reward = self.det_angle_reward()
         if self.add_fuel_penalty:
-            return self.det_term_rew() + self.det_fuel_rew(action) + self.det_angle_reward()
+            return self.det_term_rew() + self.det_fuel_rew(action) + angle_reward
         return self.det_term_rew() + angle_reward
 
     def det_angle_reward(self) -> float:

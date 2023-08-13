@@ -14,6 +14,7 @@ class DataCollector:
     def __init__(self):
         self.start_buffer = []
         self.capture_buffer = [] # TODO: IMPLEMENT CAPTURE BUFFER
+        self.current_trajectory = []
         # Save the intermediate states from the start state to the capture
         # Can we learn from using one winning trajectory as start states? - no clustering, no capture buffer
         # Pickle the start state buffer, unpickle it later
@@ -77,6 +78,10 @@ def main():
             rand_act = data_collector.choose_action(state)
             state, reward, done, _, info = env.step(rand_act)
             data_collector.filter_state(state)
+            data_collector.current_trajectory.append(state)
+            if env.is_capture():
+                data_collector.capture_buffer.append(data_collector.current_trajectory)
+        data_collector.current_trajectory = []
             # if dyn.vec_norm(state[0:2]-state[8:10]) < 1e5:
             # print("CAPTURE", state)
 
