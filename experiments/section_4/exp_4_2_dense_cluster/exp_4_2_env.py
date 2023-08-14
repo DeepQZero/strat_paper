@@ -81,6 +81,9 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
     def is_capture(self) -> bool:
         return dyn.vec_norm(self.mobile[0:2] - self.cap_base[0:2]) < 5e5
 
+    def is_close_capture(self) -> bool:
+        return dyn.vec_norm(self.mobile[0:2] - self.cap_base[0:2]) < 5e6
+
     def is_timeout(self) -> bool:
         return self.time_step == self.MAX_TURNS
 

@@ -18,9 +18,8 @@ def train_agent():
     #tb_log_path = os.path.join("tb_logs", "PPO_testing")
     #agent = PPO("MlpPolicy", env, tensorboard_log=tb_log_path, verbose=1)
     #agent.learn(total_timesteps=int(5e6), callback=CaptureCallback())
-    # TODO: Change the scaling of the fuel penalty and try this
     env2 = make_env()
-    tb_log_path = os.path.join("tb_logs", "PPO_FuelPen_Rescaled_0.005") # self.FUEL_MULTIPLIER = 0.5 instead
+    tb_log_path = os.path.join("tb_logs", "PPO_FuelPen")
     agent = PPO("MlpPolicy", env2, tensorboard_log=tb_log_path, verbose=1)
     agent.learn(total_timesteps=int(5e6), callback=CaptureCallback())
 

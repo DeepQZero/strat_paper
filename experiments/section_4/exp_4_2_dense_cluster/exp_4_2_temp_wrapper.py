@@ -13,16 +13,19 @@ from lib import dynamics as dyn
 class DataCollector:
     def __init__(self):
         self.start_buffer = []
-        self.capture_buffer = [] # TODO: IMPLEMENT CAPTURE BUFFER
+        self.capture_buffer = []
         self.current_trajectory = []
+        #self.start_trajectory_buffer = []
         # Save the intermediate states from the start state to the capture
         # Can we learn from using one winning trajectory as start states? - no clustering, no capture buffer
         # Pickle the start state buffer, unpickle it later
         self.MAX_FUEL = 125.0
         self.MAX_TURNS = 112
+        self.GOAL_LENGTH = 50
 
     def buffer_sample(self):
-        if np.random.uniform(0, 1) < 0.5 and len(self.start_buffer) > 0:
+        sample_prob = 0.2 + 0.3 * len(self.start_buffer) / self.GOAL_LENGTH
+        if np.random.uniform(0, 1) < sample_prob and len(self.start_buffer) > 0:
             return self.sample_start_state()
         return None
 
@@ -30,6 +33,11 @@ class DataCollector:
         return random.choice(self.start_buffer)
 
     def filter_state(self, state):
+        if self.eval_state(state):
+            print("STATE HAS BEEN APPENDED")
+            self.start_buffer.append(state)
+
+    def eval_state(self, state):
         angle = dyn.abs_angle_diff(state[0:2], state[8:10])
         dist = dyn.vec_norm(state[0:2])
         in_zone = abs(dist - dyn.GEO) < 5e6
@@ -42,10 +50,10 @@ class DataCollector:
         # if in_zone and good_fuel and good_turn:
         #     self.state_buffer.append(state)
         if in_zone and good_fuel and good_turn:
-            print("STATE HAS BEEN APPENDED")
             distance = dyn.vec_norm(state[0:2] - state[8:10])
             print(angle_left_proportion, fuel_left_proportion, turn_left_proportion, distance)
-            self.start_buffer.append(state)
+            return True
+        return False
 
     def choose_action(self, state):
         #if np.random.uniform(0, 1) < 0.0 or state[13] > self.MAX_FUEL:
@@ -79,8 +87,6 @@ def main():
             state, reward, done, _, info = env.step(rand_act)
             data_collector.filter_state(state)
             data_collector.current_trajectory.append(state)
-            if env.is_capture():
-                data_collector.capture_buffer.append(data_collector.current_trajectory)
         data_collector.current_trajectory = []
             # if dyn.vec_norm(state[0:2]-state[8:10]) < 1e5:
             # print("CAPTURE", state)
