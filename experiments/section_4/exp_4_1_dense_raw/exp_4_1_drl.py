@@ -7,7 +7,7 @@ from stable_baselines3 import PPO
 
 from lib import dynamics as dyn
 from exp_4_1_env import Env
-from sb3_callback import CaptureCallback
+from capture_callback import CaptureCallback
 
 def make_env():
     env = Env()

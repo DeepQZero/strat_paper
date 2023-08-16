@@ -15,7 +15,7 @@ class DataCollector:
         self.start_buffer = []
         self.capture_buffer = []
         self.current_trajectory = []
-        #self.start_trajectory_buffer = []
+        self.start_trajectory_buffer = []
         # Save the intermediate states from the start state to the capture
         # Can we learn from using one winning trajectory as start states? - no clustering, no capture buffer
         # Pickle the start state buffer, unpickle it later
@@ -24,7 +24,7 @@ class DataCollector:
         self.GOAL_LENGTH = 50
 
     def buffer_sample(self):
-        sample_prob = 0.2 + 0.3 * len(self.start_buffer) / self.GOAL_LENGTH
+        sample_prob = 1.0 #0.2 + 0.3 * len(self.start_buffer) / self.GOAL_LENGTH
         if np.random.uniform(0, 1) < sample_prob and len(self.start_buffer) > 0:
             return self.sample_start_state()
         return None

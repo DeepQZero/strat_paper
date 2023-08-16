@@ -3,17 +3,16 @@ import gymnasium as gym
 from lib import dynamics as dyn
 # TODO: Try to render the environment - plot positions with a colorbar
 # condition the color on time
-# TODO: Callback for number of captures
 
 class Env(gym.Env):  # TODO RENAME SpaceEnv
     def __init__(self, step_len: int = 10800, dis: int = 180,
-                 max_turns: int = 8*14, max_fuel=125, add_fuel_penalty=True) -> None:  # TODO determine fuel!!!
+                 max_turns: int = 8*14, max_fuel=125, add_fuel_penalty=True, noise=True) -> None:  # TODO determine fuel!!!
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
         self.MAX_FUEL = max_fuel
         self.FUEL_MULTIPLIER = 0.1
-        self.SIGMA = 0.01  # Gaussian noise in actions
+        self.SIGMA = 0.01 if noise else 0.00 # Gaussian noise in actions
         self.angle_diff = 1.0
         self.mobile = None
         self.cap_base = None
@@ -76,7 +75,7 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
 
     def is_done(self) -> bool:
         """Determines if episode has reached termination."""
-        return self.is_capture() or self.is_timeout() or self.is_out_of_fuel()
+        return self.is_capture() or self.is_timeout() #or self.is_out_of_fuel()
 
     def is_capture(self) -> bool:
         return dyn.vec_norm(self.mobile[0:2] - self.cap_base[0:2]) < 5e5

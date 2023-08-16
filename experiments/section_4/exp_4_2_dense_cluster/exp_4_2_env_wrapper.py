@@ -8,7 +8,6 @@ import gymnasium as gym
 from exp_4_2_env import Env
 from lib import dynamics as dyn
 
-
 class ClusterEnv(gym.Env):
     def __init__(self, cluster_epis=1000, num_clusters=50): #TODO: decay the number of cluster episodes?
         self.env = Env()
@@ -21,11 +20,12 @@ class ClusterEnv(gym.Env):
         self.num_resets = 0
         self.fig_counter = 0
         self.state = None
+        self.current_trajectory = []
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
     def reset(self, seed=None, options=None):
-        if (self.num_resets % self.CLUSTER_EPIS) == 0: #and self.num_resets > 0:
+        if False: #(self.num_resets % self.CLUSTER_EPIS) == 0: #and self.num_resets > 0:
             self.cluster()
         if len(self.clusters) == 0:
             state, _ = self.env.reset()
@@ -37,6 +37,7 @@ class ClusterEnv(gym.Env):
                 state, _ = self.env.det_reset_helper(start_state)
         self.num_resets += 1
         self.state = state
+        self.current_trajectory = []
         return self.det_obs(self.state), None
 
     def det_obs(self, state) -> np.ndarray:
@@ -58,11 +59,16 @@ class ClusterEnv(gym.Env):
         state, reward, done, _, info = self.env.step(action)
         self.filter_state(state)
         self.state = state
+        self.current_trajectory.append(state)
+        if self.env.is_capture():
+            print("CAPTURE TRAJECTORY")
+            print(self.current_trajectory)
         return self.det_obs(self.state), reward, done, False, info
 
     def hard_reset(self):
         self.state_buffer = []
         self.clusters = []
+        self.current_trajectory = []
         self.num_resets = 0
 
     def filter_state(self, state):
@@ -79,7 +85,7 @@ class ClusterEnv(gym.Env):
         #     self.state_buffer.append(state)
         if in_zone and good_fuel and good_turn:
             #print("STATE HAS BEEN APPENDED")
-            distance = dyn.vec_norm(self.state[0:2] - self.state[8:10])
+            distance = dyn.vec_norm(state[0:2] - state[8:10])
             #print(angle_left_proportion, fuel_left_proportion, turn_left_proportion, distance)
             self.state_buffer.append(state)
 
@@ -122,6 +128,8 @@ class ClusterEnv(gym.Env):
             plt.close()
             self.fig_counter += 1
 
+    def is_capture(self):
+        return self.env.is_capture()
 
 def main():
     env = ClusterEnv()
