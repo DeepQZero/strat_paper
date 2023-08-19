@@ -13,6 +13,7 @@ import stable_baselines3 as sb3
 from stable_baselines3 import DQN
 from stable_baselines3.common.env_checker import check_env
 from stable_baselines3.common.policies import obs_as_tensor
+from stable_baselines3.common.callbacks import EvalCallback
 
 from breakout_obs_wrapper import CNNObservation
 from breakout_reward_wrapper import SparseReward
@@ -57,7 +58,8 @@ def learn_model(model_name, num_timesteps=int(1e6), reward_wrapped=False):
     # Normalizes images by default - see docs
     model = DQN("CnnPolicy", env, verbose=1, device="cuda", tensorboard_log=tb_log_path, learning_starts=int(1e5),
                 exploration_fraction=0.1, exploration_final_eps=0.01, batch_size=32)
-    model.learn(total_timesteps=num_timesteps)
+    eval_callback = EvalCallback() # TODO FILL IN ARGS
+    model.learn(total_timesteps=num_timesteps, callback=[eval_callback])
     model.save(model_name)
     del model # delete the model object/replay buffer from RAM. Model file remains stored.
     gc.collect()

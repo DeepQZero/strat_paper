@@ -25,7 +25,7 @@ class ClusterEnv(gym.Env):
         self.action_space = self.env.action_space
 
     def reset(self, seed=None, options=None):
-        if False: #(self.num_resets % self.CLUSTER_EPIS) == 0: #and self.num_resets > 0:
+        if (self.num_resets % self.CLUSTER_EPIS) == 0: #and self.num_resets > 0:
             self.cluster()
         if len(self.clusters) == 0:
             state, _ = self.env.reset()
@@ -62,7 +62,7 @@ class ClusterEnv(gym.Env):
         self.current_trajectory.append(state)
         if self.env.is_capture():
             print("CAPTURE TRAJECTORY")
-            print(self.current_trajectory)
+            #print(self.current_trajectory)
         return self.det_obs(self.state), reward, done, False, info
 
     def hard_reset(self):

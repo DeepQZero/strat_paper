@@ -1,13 +1,26 @@
+# TODO: First start in the regular start state - look for captures
+# TODO: Fill the state buffer with states in the beginning of capture trajectories
+# Also try with evaluating with the default start state and using a prefilled capture buffer
+# RecurrentPPO policy
+# Potentially decrease the learning rate (default 3e-4)
 import random
+import pickle
 
 import numpy as np
 
 from exp_4_2_env import Env
 from lib import dynamics as dyn
 class EvalEnv(Env):
-    def __init__(self):
+    def __init__(self): # Start with the base start state
         super().__init__()
-        self.NUM_STATES = 10
+        self.unproc_state = []
+        self.state_buffer = []
+        self.NUM_STATES = 250
+        self.fill_state_buffer_with_captures()
+
+    def init2(self): # __init__
+        super().__init__()
+        self.NUM_STATES = 250
         self.state_buffer = []
         self.unproc_state = []
         print("FILLING EVAL ENV STATE BUFFER")
@@ -18,7 +31,8 @@ class EvalEnv(Env):
         """Returns observation per Gym standard."""
         # distance from GEO, velocity vector, angle from enemy base
         # rotate observations so the enemy base is always at zero
-        # TODO: rotate if something doesn't work. Maybe rendering
+        # TODO: Rotate everything backwards by the angle between enemy position and the normal
+        #       Save actions with a capture trajectory and try those actions in another environment
         state = super().det_obs()
         self.unproc_state = state
         mobile_pos = (state[0:2] - dyn.GEO) / 5e6
@@ -38,6 +52,16 @@ class EvalEnv(Env):
         rand_angle = np.random.uniform(0, 2 * np.pi)
         rand_act = np.array([np.cos(rand_angle), np.sin(rand_angle)]) * rand_thrust
         return rand_act
+
+    def fill_state_buffer_with_captures(self): # Working
+        data_collector = pickle.load(open("capture_buffer.pkl", "rb"))
+        for capture_traj in data_collector.capture_buffer:
+            trunc_capture_traj = capture_traj[:28]
+            while len(self.state_buffer) < self.NUM_STATES:
+                choices = random.sample(trunc_capture_traj, random.randint(1, 10))
+                for c in choices:
+                    self.state_buffer.append(c) if len(self.state_buffer) < self.NUM_STATES else None
+        return
 
     def fill_state_buffer(self):
         i = 0
@@ -64,6 +88,9 @@ class EvalEnv(Env):
         return False
 
     def eval_state(self, state):
+        # Take the start state and add random perturbations to the X and Y positions
+        # Like 100 meters off, instead of using fuel
+        # Add a rotating frame (maybe later)
         angle = dyn.abs_angle_diff(state[0:2] * 5e6 + dyn.GEO, state[4:6] * 5e6 + dyn.GEO)
         dist = dyn.vec_norm(state[0:2]) * 5e6
         in_zone = abs(dist - dyn.GEO) < 5e6
@@ -82,7 +109,7 @@ class EvalEnv(Env):
         return False
 
     def reset(self, seed=None, options=None):
-        if len(self.state_buffer) > 0 and np.random.uniform(0, 1) < 0.5:
+        if len(self.state_buffer) > 0 and np.random.uniform(0, 1) < 0.2:
             state_choice = random.choice(self.state_buffer)
             return self.det_reset_helper(state_choice)
         return super().reset()

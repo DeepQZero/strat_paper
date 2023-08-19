@@ -45,7 +45,7 @@ def fill_capture_buffer():
     data_collector = DataCollector()
     env = Env()
     i = 0
-    while len(data_collector.capture_buffer) < 10:
+    while len(data_collector.capture_buffer) < 250:
         if (i % 100) == 0:
             print(i)
         if np.random.uniform(0, 1) < 0.5:
@@ -75,20 +75,26 @@ def fill_capture_buffer():
     pickle.dump(data_collector, open("capture_buffer.pkl", "wb"))
 
 def run_drl():
+    # Experiments:
+    # Train: Big capture buffer. Eval: Original State
+    # Train: State buffer. Eval: Beginnings of capture trajectories.
+    # Supplement: Big capture buffer / beginnings of capture trajectories.
+    #data_collector = pickle.load(open("state_buffer.pkl", "rb"))
     data_collector = pickle.load(open("capture_buffer.pkl", "rb"))
     #print(data_collector.capture_buffer)
     env = ClusterEnv()
     #env.state_buffer = data_collector.start_buffer
     env.clusters = data_collector.capture_buffer
-    tb_log_path = os.path.join("tb_logs", "PPO_Capture_Buffer")
+    tb_log_path = os.path.join("tb_logs", "PPO_CapBuf_DetEval")
     eval_env = EvalEnv()
     eval_callback = EvalCallback(eval_env, best_model_save_path="./logs/",
-                             log_path="./logs/", eval_freq=int(1e4), n_eval_episodes=20)
+                             log_path="./logs/", eval_freq=int(1e4), n_eval_episodes=100)
     agent = PPO("MlpPolicy", env, tensorboard_log=tb_log_path, verbose=1, ent_coef=0.01)
     agent.learn(total_timesteps=int(2e6), callback=[CaptureCallback(), eval_callback])
 
 
 if __name__ == "__main__":
-    #fill_capture_buffer()
+    #fill_state_buffer()
+    fill_capture_buffer()
     run_drl()
 
