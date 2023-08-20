@@ -100,8 +100,7 @@ class ClusterEnv(gym.Env):
         for i, state in enumerate(self.state_buffer):
             candidate_states[i, 0] = (dyn.vec_norm(state[0:2]) - dyn.GEO) / 10e6
             candidate_states[i, 1] = dyn.abs_angle_diff(state[0:2], state[8:10]) / np.pi
-        if candidate_states.shape[0] < self.NUM_CLUSTERS:
-            # TODO: Look at the temp test experiment - fill buffer at initialization
+        if len(self.state_buffer) < self.NUM_CLUSTERS:
             self.clusters = []
             print("FAILED TO FIND ANY STATES")
         else:

@@ -16,7 +16,8 @@ class EvalEnv(Env):
         self.unproc_state = []
         self.state_buffer = []
         self.NUM_STATES = 250
-        self.fill_state_buffer_with_captures()
+        self.fill_state_buffer_with_default()
+        #self.fill_state_buffer_with_captures()
 
     def init2(self): # __init__
         super().__init__()
@@ -52,6 +53,13 @@ class EvalEnv(Env):
         rand_angle = np.random.uniform(0, 2 * np.pi)
         rand_act = np.array([np.cos(rand_angle), np.sin(rand_angle)]) * rand_thrust
         return rand_act
+
+    def fill_state_buffer_with_default(self):
+        env = Env()
+        while len(self.state_buffer) < self.NUM_STATES:
+            default_state, _ = env.reset()
+            self.state_buffer.append(default_state)
+        return
 
     def fill_state_buffer_with_captures(self): # Working
         data_collector = pickle.load(open("capture_buffer.pkl", "rb"))

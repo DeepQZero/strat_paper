@@ -1,3 +1,4 @@
+# TODO: Combine fill_state_buffer and fill_capture_buffer
 from multiprocessing import Pool
 import random
 import os
@@ -54,6 +55,7 @@ def fill_capture_buffer():
                 state, _ = env.reset()
             else:
                 for u in data_collector.start_trajectory_buffer:
+                    # data_collector.start_trajectory_buffer.pop(u)
                     if np.linalg.norm(u[0] - state) < 1e-6:
                         data_collector.current_trajectory = u[1]
                 env.det_reset_helper(state)
@@ -76,15 +78,18 @@ def fill_capture_buffer():
 
 def run_drl():
     # Experiments:
-    # Train: Big capture buffer. Eval: Original State
+    # Big capture buffer / beginnings of capture trajectories. #1
+    # Train: Big capture buffer. Eval: Original State #2
     # Train: State buffer. Eval: Beginnings of capture trajectories.
-    # Supplement: Big capture buffer / beginnings of capture trajectories.
     #data_collector = pickle.load(open("state_buffer.pkl", "rb"))
     data_collector = pickle.load(open("capture_buffer.pkl", "rb"))
-    #print(data_collector.capture_buffer)
+    proc_cap_buffer = []
+    for traj in data_collector.capture_buffer:
+        for state in traj:
+            proc_cap_buffer.append(state)
     env = ClusterEnv()
     #env.state_buffer = data_collector.start_buffer
-    env.clusters = data_collector.capture_buffer
+    env.state_buffer = proc_cap_buffer
     tb_log_path = os.path.join("tb_logs", "PPO_CapBuf_DetEval")
     eval_env = EvalEnv()
     eval_callback = EvalCallback(eval_env, best_model_save_path="./logs/",
@@ -95,6 +100,6 @@ def run_drl():
 
 if __name__ == "__main__":
     #fill_state_buffer()
-    fill_capture_buffer()
+    #fill_capture_buffer()
     run_drl()
 
