@@ -6,7 +6,7 @@ from lib import dynamics as dyn
 
 class Env(gym.Env):  # TODO RENAME SpaceEnv
     def __init__(self, step_len: int = 10800, dis: int = 180,
-                 max_turns: int = 8*14, max_fuel=125, add_fuel_penalty=True, noise=True) -> None:  # TODO determine fuel!!!
+                 max_turns: int = 8*14, max_fuel=125, add_fuel_penalty=True, noise=False) -> None:  # TODO determine fuel!!!
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
