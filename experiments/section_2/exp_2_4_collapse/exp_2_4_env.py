@@ -1,147 +1,133 @@
-import cv2
-import gymnasium as gym
 import numpy as np
-import collections
+import gym
+from gym.spaces.box import Box
+from gym.spaces.discrete import Discrete
+
+from lib import dynamics
+
+GEO = 42.164e6
+BASE_VEL_Y = 3.0746e3
+MU = 3.9860e14
 
 
-class ClipRewardWrapper(gym.RewardWrapper):
-    def __init__(self, env=None):
-        super(ClipRewardWrapper, self).__init__(env)
+class Env(gym.Env):
+    def __init__(self,
+                 step_length=3600,
+                 discretization=60,
+                 max_turns=24*28):
+        self.observation_space = Box(low=-np.inf, high=np.inf, shape=(1, 14), dtype=np.float32)
+        self.action_space = Discrete(9)
+        self.CAP_RAD = 1e5
+        self.DISCRETIZATION = discretization
+        self.UPDATE_LENGTH = step_length / discretization
+        self.MAX_TURNS = max_turns
+        self.caught = None
+        self.current_turn = None
+        self.unit = None
+        self.enemy_base = None
+        self.friendly_base = None
+        self.fuel = None
 
-    def reward(self, reward):
-        return np.sign(reward)
+    def reset(self, state=np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y,
+                                   -GEO, 0.0, 0.0, -BASE_VEL_Y,
+                                   GEO, 0.0, 0.0, BASE_VEL_Y,
+                                   0, 0])) -> np.ndarray:
+        """Resets environment. Returns first observation per Gym Standard."""
+        # TODO: local vs global variables - what is happening???
+        self.unit = np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y])
+        self.friendly_base = np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y])
+        self.enemy_base = np.array([GEO, 0.0, 0.0, BASE_VEL_Y])
+        #self.unit = state[0:4]
+        #self.friendly_base = state[4:8]
+        #self.enemy_base = state[8:12]
+        self.caught = int(state[12])
+        self.current_turn = 0 # TODO CHANGE BACK!!!
+        self.fuel = 10000
+        return self.det_obs()
 
+    def det_obs(self) -> np.ndarray:
+        """Returns observation by Gym standard."""
+        angle = np.arctan2(self.enemy_base[1], self.enemy_base[0])
+        unit = self.unit_obs(self.unit, angle)
+        friendly_base = self.unit_obs(self.friendly_base, angle)
+        enemy_base = self.unit_obs(self.enemy_base, angle)
+        return np.concatenate((unit, friendly_base, enemy_base,
+                               [self.caught], [self.current_turn]))
 
-class MinimalActionWrapper(gym.ActionWrapper):
-    def __init__(self, env=None):
-        super(MinimalActionWrapper, self).__init__(env)
+    def unit_obs(self, unit, angle):
+        return unit
+        # unit_new_x_y = rotate(*unit[0:2], -angle)
+        # unit = [*unit_new_x_y, *unit[2:]]
+        # return unit
 
-    def action(self, act):
+    def step(self, action):
+        rotated_thrust = self.decode_action(action)
+        self.unit[2:4] += rotated_thrust
+        self.unit = self.prop_unit(self.unit)
+        self.friendly_base = self.prop_unit(self.friendly_base)
+        self.enemy_base = self.prop_unit(self.enemy_base)
+        self.current_turn += 1
+        neg_fuel = self.score_action(action)
+        self.fuel -= self.score_action(action)
+        if dynamics.distance(self.unit[0:2], self.enemy_base[0:2]) < self.CAP_RAD and self.caught == 0:
+            self.caught = 1
+            print("CAPTURE")
+        elif self.caught == 1 and dynamics.distance(self.unit[0:2], self.friendly_base[0:2]) < self.CAP_RAD:
+            self.caught = 2
+            print("VICTORY!!!!!", self.current_turn)
+        return self.det_obs(), self.det_reward(action), self.is_done(), {}
+
+    def is_done(self):
+        return self.current_turn == self.MAX_TURNS #or self.caught == 2 or self.fuel <= 0
+
+    def det_reward(self, action):
+        return -1 * self.score_action(action)
+
+    def prop_unit(self, unit):
+        return dynamics.propagate(unit[0:4], self.DISCRETIZATION, self.UPDATE_LENGTH)
+
+    def score_action(self, act):
+        new_act = self.decode_action(act)
+        return np.sqrt(new_act[0]**2) + np.sqrt(new_act[1]**2)
+
+    def decode_action(self, act):
         if act == 0:
-            return 0
+            action = [-1.0, -1.0]
         elif act == 1:
-            return 2
+            action = [-1.0, 0.0]
         elif act == 2:
-            return 3
+            action = [-1.0, 1.0]
         elif act == 3:
-            return 1
+            action = [0.0, -1.0]
+        elif act == 4:
+            action = [0.0, 0.0]
+        elif act == 5:
+            action = [0.0, 1.0]
+        elif act == 6:
+            action = [1.0, -1.0]
+        elif act == 7:
+            action = [1.0, 0.0]
         else:
-            return 0
+            action = [1.0, 1.0]
+        action[0] *= 1
+        action[1] *= 1
+        angle = np.arctan2(self.unit[3], self.unit[2])
+        action = dynamics.rotate(*action, angle)
+        return action
 
 
-class WarpFrameWrapper(gym.ObservationWrapper):
-    def __init__(self, env=None):
-        super(WarpFrameWrapper, self).__init__(env)
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(4, 84, 84), dtype=np.uint8)
+    @staticmethod
+    def angle_diff(state):
+        x = np.arctan2(state[1], state[0])
+        y = np.arctan2(state[9], state[8])
+        abs_diff = np.abs(x - y)
+        # print(x, y, abs_diff)
+        return min((2 * np.pi) - abs_diff, abs_diff)
 
-    def observation(self, obs):
-        obs = obs[:, :, 0] * 0.299 + \
-              obs[:, :, 1] * 0.587 + \
-              obs[:, :, 2] * 0.114
-        resized_screen = cv2.resize(obs, (84, 110), interpolation=cv2.INTER_AREA)
-        x_t = resized_screen[18:102, :]
-        x_t = np.reshape(x_t, [84, 84, 1])
-        img = np.moveaxis(x_t, 2, 0)
-        # img = img.astype(np.uint8)  # TODO Figure out if this is necessary
-        return img
-
-
-# class ScaledFloatFrameWrapper(gym.ObservationWrapper):
-#     def __init__(self, env=None):
-#         super(ScaledFloatFrameWrapper, self).__init__(env)
-#
-#     def observation(self, obs):
-#         return np.array(obs).astype(np.float32) / 255.0
-
-
-class FireResetWrapper(gym.Wrapper):
-    def __init__(self, env):
-        super(FireResetWrapper, self).__init__(env)
-
-    def reset(self, seed=None, options=None):
-        self.env.reset()
-        obs, _, _, _, _ = self.env.step(1)
-        return obs, None
-
-    def step(self, action):
-        return self.env.step(action)
-
-
-class EpisodicLifeWrapper(gym.Wrapper):
-    def __init__(self, env):
-        super(EpisodicLifeWrapper, self).__init__(env)
-        self.is_game_over = True
-        self.current_lives = 0
-
-    def step(self, action):
-        obs, rew, done1, done2, info = self.env.step(action)
-        done = done1 or done2
-        self.is_game_over = done
-        lives = self.env.unwrapped.ale.lives()
-        if 0 < lives < self.current_lives:
-            done = True
-        self.current_lives = lives
-        return obs, rew, done1, done2, info
-
-    def reset(self, seed=None, options=None):
-        if self.is_game_over:
-            obs = self.env.reset()
-        else:
-            obs, _, _, _, _ = self.env.step(0)
-        self.current_lives = self.env.unwrapped.ale.lives()
-        return obs, None
-
-
-class ManyActionWrapper(gym.Wrapper):
-    def __init__(self, env=None, k=4):
-        super(ManyActionWrapper, self).__init__(env)
-        self.skip_num = k
-
-    def step(self, action):
-        tot_rew = 0.0
-        for _ in range(self.skip_num):
-            obs, rew, done1, done2, info = self.env.step(action)
-            tot_rew += rew
-            done = done1 or done2
-            if done:
-                break
-        return obs, tot_rew, done1, done2, info
-
-    def reset(self, seed=None, options=None):
-        return self.env.reset()
-
-
-class FrameStackWrapper(gym.Wrapper):
-    def __init__(self, env=None, k=4):
-        super(FrameStackWrapper, self).__init__(env)
-        self.skip = k
-        self.frames = collections.deque([], maxlen=k)
-
-    def reset(self, seed=None, options=None):
-        obs, info = self.env.reset()
-        for _ in range(self.skip):
-            self.frames.append(obs)
-        return self.concat_obs(), None
-
-    def step(self, action):
-        obs, rew, done1, done2, info = self.env.step(action)
-        obs = obs.astype(np.uint8)
-        self.frames.append(obs)
-        return self.concat_obs(), rew, done1, done2, info
-
-    def concat_obs(self):
-        frame_list = list(self.frames)
-        frame_array = np.array(frame_list)
-        frame_array = np.squeeze(frame_array, axis=1)
-        return frame_array
-
-class SparseReward(gym.RewardWrapper):
-    def __init__(self, env):
-        super().__init__(env)
-        self.reward_threshold = 4.0
-
-    def reward(self, r):
-        if r < self.reward_threshold:
-            return 0.0
-        return r
-
+    @staticmethod
+    def angle_diff1(state):
+        x = np.arctan2(state[1], state[0])
+        y = np.arctan2(state[5], state[4])
+        abs_diff = np.abs(x - y)
+        # print(x, y, abs_diff)
+        return min((2 * np.pi) - abs_diff, abs_diff)
