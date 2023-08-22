@@ -78,8 +78,8 @@ def fill_capture_buffer():
 
 def run_drl():
     # Experiments:
-    # Big capture buffer / beginnings of capture trajectories. #1
     # Train: Big capture buffer. Eval: Original State #2
+    # Big capture buffer / beginnings of capture trajectories. #1
     # Train: State buffer. Eval: Beginnings of capture trajectories.
     #data_collector = pickle.load(open("state_buffer.pkl", "rb"))
     data_collector = pickle.load(open("capture_buffer.pkl", "rb"))

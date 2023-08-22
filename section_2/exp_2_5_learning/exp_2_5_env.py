@@ -1,10 +1,10 @@
 import cv2
 import gymnasium as gym
-import gymnasium.spaces
 import numpy as np
 import collections
-import matplotlib.pyplot as plt
-import sys
+
+from exp_2_5_plots import ActionDist
+
 
 class ClipRewardWrapper(gym.RewardWrapper):
     def __init__(self, env=None):
@@ -44,16 +44,7 @@ class WarpFrameWrapper(gym.ObservationWrapper):
         x_t = resized_screen[18:102, :]
         x_t = np.reshape(x_t, [84, 84, 1])
         img = np.moveaxis(x_t, 2, 0)
-        # img = img.astype(np.uint8)  # TODO Figure out if this is necessary
         return img
-
-
-# class ScaledFloatFrameWrapper(gym.ObservationWrapper):
-#     def __init__(self, env=None):
-#         super(ScaledFloatFrameWrapper, self).__init__(env)
-#
-#     def observation(self, obs):
-#         return np.array(obs).astype(np.float32) / 255.0
 
 
 class FireResetWrapper(gym.Wrapper):
@@ -136,67 +127,33 @@ class FrameStackWrapper(gym.Wrapper):
         frame_array = np.array(frame_list)
         frame_array = np.squeeze(frame_array, axis=1)
         return frame_array
-        #return LazyFrames(list(self.frames))
+
+class SparseReward(gym.RewardWrapper):
+    def __init__(self, env):
+        super().__init__(env)
+        self.reward_threshold = 4.0
+
+    def reward(self, r):
+        if r < self.reward_threshold:
+            return 0.0
+        return r
 
 
-class LazyFrames(object):
-    def __init__(self, frames):
-        self._frames = frames
-        self._out = None
-
-    def _force(self):
-        if self._out is None:
-            self._out = np.concatenate(self._frames, axis=-1).reshape((4, 84, 84))
-            self._frames = None
-        return self._out
-
-    def __array__(self, dtype=None):
-        out = self._force()
-        if dtype is not None:
-            out = out.astype(dtype)
-        return out
-
-    def __len__(self):
-        return len(self._force())
-
-    def __getitem__(self, i):
-        return self._force()[i]
-
-    def count(self):
-        frames = self._force()
-        return frames.shape[frames.ndim - 1]
-
-    def frame(self, i):
-        return self._force()[..., i]
-
-
-def make_original_dqn(env):
+def make_env(env_name="ALE/Breakout-v5", render=False, reward_wrapped=False):
+    if render:
+        env = gym.make(env_name, render_mode="human", repeat_action_probability=0.00,
+                       full_action_space=False, frameskip=1) # obs_type="grayscale"
+    else:
+        env = gym.make(env_name, repeat_action_probability=0.00, full_action_space=False,
+                       frameskip=1) # obs_type="grayscale"
     env = EpisodicLifeWrapper(env)
     env = FireResetWrapper(env)
     env = WarpFrameWrapper(env)
-    env = FrameStackWrapper(env, k=4)
-    env = ManyActionWrapper(env, k=4)
+    env = FrameStackWrapper(env, k=4) # k = 4
+    env = ManyActionWrapper(env, k=4) # k = 4
     env = ClipRewardWrapper(env)
     env = MinimalActionWrapper(env)
+    if reward_wrapped:
+        env = SparseReward(env)
+    env = ActionDist(env)
     return env
-
-
-if __name__ == "__main__":
-    env = gym.make("ALE/Breakout-v5", render_mode='human', repeat_action_probability=0.00, full_action_space=False, frameskip=1)
-    env = EpisodicLifeWrapper(env)
-    env = FireResetWrapper(env)
-    env = WarpFrameWrapper(env)
-    env = FrameStackWrapper(env, k=4)
-    # env = ManyActionWrapper(env, k=1)
-    # env = ClipRewardWrapper(env)
-    # env = MinimalActionWrapper(env)
-    obs, info = env.reset()
-    # print('size: ', sys.getsizeof(obs))
-    done = False
-    while not done:
-        obs, rew, done1, done2, info = env.step(np.random.randint(4))
-        print(obs)
-        done = done1 or done2
-        if done:
-            env.reset()
-            done = False

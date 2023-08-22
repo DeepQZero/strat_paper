@@ -54,7 +54,7 @@ def main_exp():
     """Gets experiment data and returns dictionary of polished data."""
     # get experiment raw data
     tic = time.time()
-    with Pool(16) as p:
+    with Pool(4) as p:
         _ = p.map(one_episode, list(range(int(1e6))))
     toc = time.time()
     print(tic-toc)
