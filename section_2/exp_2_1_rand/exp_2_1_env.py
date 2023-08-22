@@ -1,38 +1,43 @@
+import copy
+
 import numpy as np
 
 from lib import dynamics as dyn
 
 
-class Env:  # TODO RENAME SpaceEnv
+class BaseSpaceEnv:
     def __init__(self, step_len: int = 10800, dis: int = 180,
-                 max_turns: int = 8*14) -> None:
+                 max_turns: int = 4*28) -> None:
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
         self.mobile = None
-        self.cap_base = None
-        self.ret_base = None
+        self.base = None
         self.time_step = None
 
     def reset(self) -> np.ndarray:
         """Resets environment and returns observation per Gym Standard."""
         self.mobile = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
-        self.ret_base = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
-        self.cap_base = np.array([dyn.GEO, 0.0, 0.0, dyn.BASE_VEL_Y])
+        self.base = np.array([dyn.GEO, 0.0, 0.0, dyn.BASE_VEL_Y])
         self.time_step = 0
+        return self.det_obs()
+
+    def det_reset(self, mobile, base, time_step) -> np.ndarray:
+        """Resets environment deterministically."""
+        self.mobile = copy.deepcopy(mobile)
+        self.base = copy.deepcopy(base)
+        self.time_step = copy.deepcopy(time_step)
         return self.det_obs()
 
     def det_obs(self) -> np.ndarray:
         """Returns observation per Gym standard."""
-        return np.concatenate((self.mobile, self.ret_base,
-                               self.cap_base, [self.time_step]))
+        return np.concatenate((self.mobile, self.base, [self.time_step]))
 
     def step(self, action: np.ndarray) -> tuple:
         """Advances environment forward one time step, returns Gym signals."""
         self.mobile[2:4] += action
         self.mobile = self.prop_unit(self.mobile)
-        self.ret_base = self.prop_unit(self.ret_base)
-        self.cap_base = self.prop_unit(self.cap_base)
+        self.base = self.prop_unit(self.base)
         self.time_step += 1
         return self.det_obs(), self.det_reward(), self.is_done(), {}
 
@@ -50,17 +55,3 @@ class Env:  # TODO RENAME SpaceEnv
     def prop_unit(self, unit: np.ndarray) -> np.ndarray:
         """Propagates a given unit state forward one time step."""
         return dyn.propagate(unit[0:4], self.DIS, self.UP_LEN)
-
-
-def env_test():
-    env = Env()
-    for i in range(100):
-        print(i)
-        _ = env.reset()
-        done = False
-        while not done:
-            state, reward, done, info = env.step(np.random.randint(9))
-
-
-# if __name__ == "__main__":
-#     env_test()

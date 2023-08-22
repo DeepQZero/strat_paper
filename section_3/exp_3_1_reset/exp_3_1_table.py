@@ -7,10 +7,10 @@ import matplotlib.pyplot as plt
 # with open('../../section_2/exp_2_3_time/exp_2_3_data.pkl', 'rb') as f:
 #     data_dict_fixed = pickle.load(f)
 
-with open('exp_3_1_tmp10_data.pkl', 'rb') as f:
+with open('exp_3_2_data.pkl', 'rb') as f:
      data_dict_fixed = pickle.load(f)
 
-with open('exp_3_1_tmp12_data.pkl', 'rb') as f:
+with open('exp_3_1_data.pkl', 'rb') as f:
     data_dict_random = pickle.load(f)
 
 # tmp 1 is -np.pi/8 cont
@@ -28,14 +28,14 @@ with open('exp_3_1_tmp12_data.pkl', 'rb') as f:
 
 heatplot_array = np.zeros((7, 5))
 for i, zone in enumerate([round(np.pi/8 * i, 2) for i in range(1, 8)]):
-    for j, thrust in enumerate([1, 5, 10, 50, 100]):
-        heatplot_array[i, j] = data_dict_random[thrust][zone]['num_entrances'] # - \
-                               # data_dict_fixed[thrust][zone]['num_entrances']
+    for j, thrust in enumerate([5, 7.5, 10, 15, 20]):
+        heatplot_array[i, j] = data_dict_fixed[thrust][zone]['num_entrances'] / 1e4 - \
+                               data_dict_random[thrust][zone]['num_entrances'] / 1e4
 
 x = sns.color_palette("mako", as_cmap=True)
 hm = sns.heatmap(heatplot_array, annot=True, fmt='g', cmap=x,
                  cbar_kws={'label': 'Caption'})
-hm.set_xticklabels([1, 5, 10, 50, 100])
+hm.set_xticklabels([5, 7.5, 10, 15, 20])
 hm.set_yticklabels([round(np.pi/8 * i, 2) for i in range(1, 8)])
 hm.set_ylabel('Zone Upper Bound')
 hm.set_xlabel('Max Thrust')

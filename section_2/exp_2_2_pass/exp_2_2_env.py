@@ -4,52 +4,45 @@ from lib import dynamics as dyn
 
 
 class Env:
-    def __init__(self, step_length=10800, discretization=180, max_turns=8*14):
-        self.DISCRETIZATION = discretization
-        self.UPDATE_LENGTH = step_length / discretization
+    def __init__(self, step_len: int = 10800, dis: int = 180,
+                 max_turns: int = 4*28) -> None:
+        self.DIS = dis
+        self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
-        self.current_turn = None
-        self.unit = None
+        self.mobile = None
         self.base = None
-        self.return_base = None
+        self.time_step = None
 
     def reset(self) -> np.ndarray:
-        """Resets environment. Returns first observation per Gym Standard."""
-        self.current_turn = 0
-        self.unit = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
+        """Resets environment and returns observation per Gym Standard."""
+        self.mobile = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
         self.base = np.array([dyn.GEO, 0.0, 0.0, dyn.BASE_VEL_Y])
-        self.return_base = np.array([-dyn.GEO, 0.0, 0.0, -dyn.BASE_VEL_Y])
+        self.time_step = 0
         return self.det_obs()
 
     def det_obs(self) -> np.ndarray:
-        """Returns observation by Gym standard."""
-        return np.concatenate((self.unit, self.base, self.return_base, [self.current_turn]))
+        """Returns observation per Gym standard."""
+        return np.concatenate((self.mobile, self.base, [self.time_step]))
 
-    def step(self, action):
-        self.unit[2:4] += action
-        self.unit = self.prop_unit(self.unit)
+    def step(self, action: np.ndarray) -> tuple:
+        """Advances environment forward one time step, returns Gym signals."""
+        self.mobile[2:4] += action
+        self.mobile = self.prop_unit(self.mobile)
         self.base = self.prop_unit(self.base)
-        self.current_turn += 1
+        self.time_step += 1
         return self.det_obs(), self.det_reward(), self.is_done(), {}
 
-    def is_done(self):
-        return self.current_turn == self.MAX_TURNS # or abs(dyn.norm(self.unit[0], self.unit[1]) - dyn.GEO) > dyn.GEO_BOUND
+    def is_done(self) -> bool:
+        """Determines if episode has reached termination."""
+        return self.time_step == self.MAX_TURNS
 
-    def det_reward(self):
+    def det_reward(self) -> float:
+        """Returns reward at current time step."""
         if self.is_done():
-            return 0
+            return 0.0
         else:
-            return 0
+            return 0.0
 
-    def prop_unit(self, unit):
-        return dyn.propagate(unit[0:4], self.DISCRETIZATION, self.UPDATE_LENGTH)
-
-
-if __name__ == "__main__":
-    env = Env()
-    for i in range(100000):
-        print(i)
-        state = env.reset()
-        done = False
-        while not done:
-            state, reward, done, info = env.step(np.random.randint(9))
+    def prop_unit(self, unit: np.ndarray) -> np.ndarray:
+        """Propagates a given unit state forward one time step."""
+        return dyn.propagate(unit[0:4], self.DIS, self.UP_LEN)
