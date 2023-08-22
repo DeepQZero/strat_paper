@@ -3,7 +3,7 @@ import gymnasium as gym
 import numpy as np
 import collections
 
-from exp_2_5_plots import ActionDist
+from exp_2_6_plots import ActionDist
 
 
 class ClipRewardWrapper(gym.RewardWrapper):

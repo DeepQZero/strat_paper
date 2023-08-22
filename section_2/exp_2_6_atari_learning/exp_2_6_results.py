@@ -9,7 +9,7 @@ import gymnasium as gym
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import EvalCallback
 
-from exp_2_5_env import make_env
+from exp_2_6_env import make_env
 
 
 def test_model(model_name, reward_wrapped, num_episodes=int(1e1)):

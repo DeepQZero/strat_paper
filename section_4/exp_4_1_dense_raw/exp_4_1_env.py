@@ -5,14 +5,15 @@ from lib import dynamics as dyn
 # condition the color on time
 # TODO: Callback for number of captures
 
-class Env(gym.Env):  # TODO RENAME SpaceEnv
+class Env(gym.Env):
     def __init__(self, step_len: int = 10800, dis: int = 180,
-                 max_turns: int = 8*14, max_fuel=125, add_fuel_penalty=True) -> None:  # TODO determine fuel!!!
+                 max_turns: int = 8*14, max_fuel=125, capture_radius=1e6, add_fuel_penalty=True) -> None:
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
         self.MAX_FUEL = max_fuel
         self.FUEL_MULTIPLIER = 0.1
+        self.CAPTURE_RADIUS = capture_radius
         self.SIGMA = 0.01  # Gaussian noise in actions
         self.angle_diff = 1.0
         self.mobile = None
@@ -83,15 +84,12 @@ class Env(gym.Env):  # TODO RENAME SpaceEnv
         self.time_step += 1
         return self.det_obs(), self.det_reward(action), self.is_done(), False, {}
 
-    def testing(self):
-        return 43.0
-
     def is_done(self) -> bool:
         """Determines if episode has reached termination."""
         return self.is_capture() or self.is_timeout()
 
     def is_capture(self) -> bool:
-        return dyn.vec_norm(self.mobile[0:2] - self.cap_base[0:2]) < 5e5
+        return dyn.vec_norm(self.mobile[0:2] - self.cap_base[0:2]) < self.CAPTURE_RADIUS
 
     def is_timeout(self) -> bool:
         return self.time_step == self.MAX_TURNS

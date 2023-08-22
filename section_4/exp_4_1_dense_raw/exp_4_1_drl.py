@@ -20,7 +20,7 @@ def train_agent():
     #agent.learn(total_timesteps=int(5e6), callback=CaptureCallback())
     env2 = make_env()
     tb_log_path = os.path.join("tb_logs", "PPO_FuelPen")
-    agent = PPO("MlpPolicy", env2, tensorboard_log=tb_log_path, verbose=1)
+    agent = PPO("MlpPolicy", env2, tensorboard_log=tb_log_path, verbose=1, ent_coef=0.01)
     agent.learn(total_timesteps=int(5e6), callback=CaptureCallback())
 
 def main():
