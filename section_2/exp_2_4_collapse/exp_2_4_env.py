@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import gymnasium as gym
 from gymnasium.spaces import Box
@@ -29,11 +31,15 @@ class Env(gym.Env):
         self.friendly_base = None
         self.fuel = None
         self.give_capture_reward = give_capture_reward
+        self.action_mag_hist = []
+        self.result_hist = []
+        self.num_timesteps = 0
+        self.PICKLE_NAME = "exp_2_4_data.pkl"
 
     def reset(self, state=np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y,
                                    -GEO, 0.0, 0.0, -BASE_VEL_Y,
                                    GEO, 0.0, 0.0, BASE_VEL_Y,
-                                   0, 0])) -> np.ndarray:
+                                   0, 0]), seed=None, options=None):
         """Resets environment. Returns first observation per Gym Standard."""
         # TODO: local vs global variables - what is happening???
         self.unit = np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y])
@@ -45,7 +51,7 @@ class Env(gym.Env):
         self.caught = int(state[12])
         self.current_turn = 0 # TODO CHANGE BACK!!!
         self.fuel = 10000
-        return self.det_obs()
+        return self.det_obs(), None
 
     def det_obs(self) -> np.ndarray:
         """Returns observation by Gym standard."""
@@ -63,6 +69,14 @@ class Env(gym.Env):
         # return unit
 
     def step(self, action):
+        self.num_timesteps += 1
+        self.action_mag_hist.append(self.score_action(action))
+        if (self.num_timesteps % int(5e3)) == 0:
+            self.result_hist.append([self.num_timesteps, np.average(self.action_mag_hist)])
+            self.action_mag_hist = []
+            print(self.result_hist)
+        if self.num_timesteps == int(1e5):
+            pickle.dump(self.result_hist, open(self.PICKLE_NAME, "wb"))
         rotated_thrust = self.decode_action(action)
         self.unit[2:4] += rotated_thrust
         self.unit = self.prop_unit(self.unit)
@@ -77,7 +91,7 @@ class Env(gym.Env):
         elif self.caught == 1 and dynamics.distance(self.unit[0:2], self.friendly_base[0:2]) < self.CAP_RAD:
             self.caught = 2
             print("VICTORY!!!!!", self.current_turn)
-        return self.det_obs(), self.det_reward(action), self.is_done(), {}
+        return self.det_obs(), self.det_reward(action), self.is_done(), False, {}
 
     def is_done(self):
         return self.current_turn == self.MAX_TURNS #or self.caught == 2 or self.fuel <= 0
