@@ -1,3 +1,4 @@
+# Still only store capture trajectories that make it to the 5e5 capture radius, but also reset outside of the 1e6 capture radius, so trajectories land within the middle
 import os
 
 import numpy as np

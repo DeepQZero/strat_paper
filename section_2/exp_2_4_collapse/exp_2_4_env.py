@@ -1,7 +1,7 @@
 import numpy as np
-import gym
-from gym.spaces.box import Box
-from gym.spaces.discrete import Discrete
+import gymnasium as gym
+from gymnasium.spaces import Box
+from gymnasium.spaces import Discrete
 
 from lib import dynamics
 
@@ -14,7 +14,8 @@ class Env(gym.Env):
     def __init__(self,
                  step_length=3600,
                  discretization=60,
-                 max_turns=24*28):
+                 max_turns=24*28,
+                 give_capture_reward=False):
         self.observation_space = Box(low=-np.inf, high=np.inf, shape=(1, 14), dtype=np.float32)
         self.action_space = Discrete(9)
         self.CAP_RAD = 1e5
@@ -27,6 +28,7 @@ class Env(gym.Env):
         self.enemy_base = None
         self.friendly_base = None
         self.fuel = None
+        self.give_capture_reward = give_capture_reward
 
     def reset(self, state=np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y,
                                    -GEO, 0.0, 0.0, -BASE_VEL_Y,
@@ -81,7 +83,10 @@ class Env(gym.Env):
         return self.current_turn == self.MAX_TURNS #or self.caught == 2 or self.fuel <= 0
 
     def det_reward(self, action):
-        return -1 * self.score_action(action)
+        if self.give_capture_reward and self.caught == 2:
+            return 10 - self.score_action(action)
+        else:
+            return -1 * self.score_action(action)
 
     def prop_unit(self, unit):
         return dynamics.propagate(unit[0:4], self.DISCRETIZATION, self.UPDATE_LENGTH)
