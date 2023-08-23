@@ -5,7 +5,6 @@
 import gc
 
 import numpy as np
-import gymnasium as gym
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import EvalCallback
 
