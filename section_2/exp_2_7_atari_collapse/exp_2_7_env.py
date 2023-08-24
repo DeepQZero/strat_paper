@@ -16,10 +16,10 @@ class PenalizeAction(gym.Wrapper):
     def step(self, action):
         obs, rew, done1, done2, info = self.env.step(action)
         if action == 2 or action == 3:
-            rew = rew - 1
+            rew = rew - 1.0
         return obs, rew, done1, done2, info
 
-def make_env(env_name="ALE/Breakout-v5", render=False, reward_wrapped=False):
+def make_env(env_name="ALE/Breakout-v5", render=False, reward_wrapped=True):
     env = exp_2_6_env.make_env(env_name=env_name, render=render, reward_wrapped=reward_wrapped)
     env.PICKLE_NAME = "exp_2_7_data.pkl"
     env = PenalizeAction(env)

@@ -1,5 +1,4 @@
 from stable_baselines3 import A2C
-
 from exp_2_5_env import Env
 
 def learn_model(model_name):

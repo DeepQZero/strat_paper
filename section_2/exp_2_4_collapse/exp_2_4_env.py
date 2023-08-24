@@ -96,9 +96,9 @@ class Env(gym.Env):
 
     def det_reward(self, action):
         if self.give_capture_reward and self.caught == 2:
-            return 10 - self.score_action(action)
+            return 10
         else:
-            return -1 * self.score_action(action)
+            return 0
 
     def prop_unit(self, unit):
         return dynamics.propagate(unit[0:4], self.DISCRETIZATION, self.UPDATE_LENGTH)
