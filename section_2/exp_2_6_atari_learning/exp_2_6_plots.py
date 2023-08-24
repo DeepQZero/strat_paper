@@ -4,7 +4,6 @@ import pickle
 import numpy as np
 import seaborn as sns
 import gymnasium as gym
-# TODO sns.cubehelix_palette(as_cmap=True)
 
 
 class ActionDist(gym.Env): # WORKING

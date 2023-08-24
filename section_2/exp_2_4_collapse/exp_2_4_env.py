@@ -1,3 +1,4 @@
+# TODO: Change up environment 2.1 to have everything we need for 2.4
 import pickle
 
 import numpy as np
@@ -42,12 +43,9 @@ class Env(gym.Env):
                                    0, 0]), seed=None, options=None):
         """Resets environment. Returns first observation per Gym Standard."""
         # TODO: local vs global variables - what is happening???
-        self.unit = np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y])
-        self.friendly_base = np.array([-GEO, 0.0, 0.0, -BASE_VEL_Y])
-        self.enemy_base = np.array([GEO, 0.0, 0.0, BASE_VEL_Y])
-        #self.unit = state[0:4]
-        #self.friendly_base = state[4:8]
-        #self.enemy_base = state[8:12]
+        self.unit = state[0:4]
+        self.friendly_base = state[4:8]
+        self.enemy_base = state[8:12]
         self.caught = int(state[12])
         self.current_turn = 0 # TODO CHANGE BACK!!!
         self.fuel = 10000
@@ -71,10 +69,10 @@ class Env(gym.Env):
     def step(self, action):
         self.num_timesteps += 1
         self.action_mag_hist.append(self.score_action(action))
-        if (self.num_timesteps % int(5e3)) == 0:
+        if (self.num_timesteps % int(2e3)) == 0:
             self.result_hist.append([self.num_timesteps, np.average(self.action_mag_hist)])
+            print(self.result_hist[-1])
             self.action_mag_hist = []
-            print(self.result_hist)
         if self.num_timesteps == int(1e5):
             pickle.dump(self.result_hist, open(self.PICKLE_NAME, "wb"))
         rotated_thrust = self.decode_action(action)
