@@ -4,7 +4,7 @@ from lib import dynamics as dyn
 
 class Env(gym.Env):
     def __init__(self, step_len: int = 10800, dis: int = 180, max_turns: int = 8*14, max_fuel=125, capture_radius=1e6,
-                 add_fuel_penalty=True, dense_reward=True) -> None:
+                 add_fuel_penalty=True, dense_reward=True, drifting=True) -> None:
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
@@ -20,6 +20,7 @@ class Env(gym.Env):
         self.total_fuel = None
         self.add_fuel_penalty = add_fuel_penalty
         self.dense_reward = dense_reward
+        self.drifting = drifting
         self.observation_space = gym.spaces.Box(-1000, 1000, shape=(8,))
         self.action_space = gym.spaces.Box(0, 10.0, shape=(2,))
 
@@ -73,7 +74,11 @@ class Env(gym.Env):
     def step(self, action: np.ndarray) -> tuple:
         """Advances environment forward one time step, returns Gym signals."""
         action = self.process_action(action)
-        action = np.array([0.0, 0.0]) if (self.total_fuel + dyn.vec_norm(action) > self.MAX_FUEL) else action
+        if self.drifting:
+            action = np.array([0.0, 0.0]) if (self.total_fuel + dyn.vec_norm(action) > self.MAX_FUEL) else action
+        else:
+            if self.total_fuel + dyn.vec_norm(action) > self.MAX_FUEL:
+                return self.det_obs(), self.det_reward(action), True, False, {}
         self.mobile[2:4] += action
         self.total_fuel += dyn.vec_norm(action)
         self.mobile = self.prop_unit(self.mobile)

@@ -11,7 +11,7 @@ import numpy as np
 from exp_4_space_env import Env
 
 def main():
-    env = Env(add_fuel_penalty=True, dense_reward=True, capture_radius=5e5)
+    env = Env(add_fuel_penalty=True, dense_reward=True, capture_radius=1e6, drifting=False)
     NUM_EPISODES = 5000
     THRUST = 10.0
     i = 0
