@@ -1,13 +1,10 @@
 import numpy as np
 import gymnasium as gym
 from lib import dynamics as dyn
-# TODO: Try to render the environment - plot positions with a colorbar
-# condition the color on time
-# TODO: Callback for number of captures
 
 class Env(gym.Env):
-    def __init__(self, step_len: int = 10800, dis: int = 180,
-                 max_turns: int = 8*14, max_fuel=125, capture_radius=1e6, add_fuel_penalty=True) -> None:
+    def __init__(self, step_len: int = 10800, dis: int = 180, max_turns: int = 8*14, max_fuel=125, capture_radius=1e6,
+                 add_fuel_penalty=True, dense_reward=True) -> None:
         self.DIS = dis
         self.UP_LEN = step_len / dis
         self.MAX_TURNS = max_turns
@@ -22,6 +19,7 @@ class Env(gym.Env):
         self.time_step = None
         self.total_fuel = None
         self.add_fuel_penalty = add_fuel_penalty
+        self.dense_reward = dense_reward
         self.observation_space = gym.spaces.Box(-1000, 1000, shape=(8,))
         self.action_space = gym.spaces.Box(0, 10.0, shape=(2,))
 
@@ -108,11 +106,13 @@ class Env(gym.Env):
 
     def det_reward(self, action) -> float:
         """Returns reward at current time step."""
-        #return self.det_term_rew() + self.det_fuel_rew(action) + self.det_angle_reward()
+        reward = self.det_term_rew()
         angle_reward = self.det_angle_reward()
         if self.add_fuel_penalty:
-            return self.det_term_rew() + self.det_fuel_rew(action) + angle_reward
-        return self.det_term_rew() + angle_reward
+            reward += self.det_fuel_rew(action)
+        if self.dense_reward:
+            reward += angle_reward
+        return reward
 
     def det_angle_reward(self) -> float:
         angle = dyn.abs_angle_diff(self.mobile[0:2], self.cap_base[0:2])
@@ -120,8 +120,6 @@ class Env(gym.Env):
         reward = self.angle_diff - new_angle_prop
         self.angle_diff = new_angle_prop
         return reward
-
-
 
     def prop_unit(self, unit: np.ndarray) -> np.ndarray:
         """Propagates a given unit state forward one time step."""
