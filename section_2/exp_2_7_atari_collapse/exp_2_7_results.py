@@ -1,10 +1,5 @@
-# TODO: Density plots of actions during training
-#       Stacked density plot of the passive action distribution
-#       Pickle the data, put it in the dropbox
-
 import gc
 
-import numpy as np
 from stable_baselines3 import DQN
 from stable_baselines3.common.callbacks import EvalCallback
 
