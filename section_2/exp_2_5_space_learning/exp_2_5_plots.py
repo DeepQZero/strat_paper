@@ -15,6 +15,7 @@ def main():
     plot = sns.lineplot(x=result_df["x"], y=result_df["y"], palette=palette, hue=1)
     plot.set(xlabel="Timestep", ylabel="Mean Action Magnitude", title="Passive Collapse due to Fuel Penalty")
     plt.grid()
+    plt.legend([], [], frameon=False)
     plt.savefig("2_5_fig.png")
     plt.show()
     return

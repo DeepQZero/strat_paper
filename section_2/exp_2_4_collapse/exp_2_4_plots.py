@@ -13,7 +13,7 @@ def main():
     result_df = pd.DataFrame(result_hist, columns=["x", "y"])
     print(result_df)
     plot = sns.lineplot(x=result_df["x"], y=result_df["y"], palette=palette, hue=1)
-    plot.set(xlabel="Timestep", ylabel="Mean Action Magnitude", title="Passive Collapse due to Fuel Penalty")
+    plot.set(xlabel="Timestep", ylabel="Mean Action Magnitude", title="No Policy Improvement Without Meaningful Rewards")
     plt.grid()
     plt.savefig("2_4_fig.png")
     plt.show()

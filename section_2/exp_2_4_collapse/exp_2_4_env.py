@@ -42,12 +42,11 @@ class Env(gym.Env):
                                    GEO, 0.0, 0.0, BASE_VEL_Y,
                                    0, 0]), seed=None, options=None):
         """Resets environment. Returns first observation per Gym Standard."""
-        # TODO: local vs global variables - what is happening???
         self.unit = state[0:4]
         self.friendly_base = state[4:8]
         self.enemy_base = state[8:12]
         self.caught = int(state[12])
-        self.current_turn = 0 # TODO CHANGE BACK!!!
+        self.current_turn = 0
         self.fuel = 10000
         return self.det_obs(), None
 
