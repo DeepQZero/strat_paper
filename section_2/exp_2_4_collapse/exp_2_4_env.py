@@ -69,7 +69,7 @@ class Env(gym.Env):
         self.num_timesteps += 1
         self.action_mag_hist.append(self.score_action(action))
         if (self.num_timesteps % int(2e3)) == 0:
-            self.result_hist.append([self.num_timesteps, np.average(self.action_mag_hist)])
+            self.result_hist.append([self.num_timesteps, (self.action_mag_hist)]) # np.average(self.action_mag_hist)
             print(self.result_hist[-1])
             self.action_mag_hist = []
         if self.num_timesteps == int(1e5):
@@ -104,7 +104,7 @@ class Env(gym.Env):
 
     def score_action(self, act):
         new_act = self.decode_action(act)
-        return np.sqrt(new_act[0]**2) + np.sqrt(new_act[1]**2)
+        return np.sqrt(new_act[0]**2 + new_act[1]**2)
 
     def decode_action(self, act):
         if act == 0:

@@ -7,11 +7,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 palette = sns.cubehelix_palette(reverse=True)
 
-def main():
+def lineplot():
     result_hist = pickle.load(open("exp_2_4_data.pkl", "rb"))[:25]
     result_hist = np.array(result_hist)
     result_df = pd.DataFrame(result_hist, columns=["x", "y"])
-    print(result_df)
     plot = sns.lineplot(x=result_df["x"], y=result_df["y"], palette=palette, hue=1)
     plot.set(xlabel="Timestep", ylabel="Mean Action Magnitude", title="No Policy Improvement With Sparse Rewards")
     plt.grid()
@@ -19,5 +18,8 @@ def main():
     plt.show()
     return
 
+def ridgeplot():
+    return
+
 if __name__ == "__main__":
-    main()
+    ridgeplot()
