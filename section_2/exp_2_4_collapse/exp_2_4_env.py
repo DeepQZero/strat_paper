@@ -67,7 +67,7 @@ class Env(gym.Env):
 
     def step(self, action):
         self.num_timesteps += 1
-        self.action_mag_hist.append(self.score_action(action))
+        self.action_mag_hist.append(action) # self.score_action(action)
         if (self.num_timesteps % int(2e3)) == 0:
             self.result_hist.append([self.num_timesteps, (self.action_mag_hist)]) # np.average(self.action_mag_hist)
             print(self.result_hist[-1])

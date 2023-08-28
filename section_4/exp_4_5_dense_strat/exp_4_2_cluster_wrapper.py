@@ -1,20 +1,13 @@
-# TODO: Combine fill_state_buffer and fill_capture_buffer
-from multiprocessing import Pool
-import random
+# Still only store capture trajectories that make it to the 5e5 capture radius, but also reset outside of the 1e6 capture radius, so trajectories land within the middle
 import os
 import pickle
 
 import numpy as np
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
-import gymnasium as gym
-import stable_baselines3
 from stable_baselines3 import PPO
 
 from exp_4_2_temp_wrapper import DataCollector
 from exp_4_2_env import Env
 from exp_4_2_env_wrapper import ClusterEnv
-from lib import dynamics as dyn
 from callbacks import CaptureCallback, EvalCallback
 from exp_4_2_eval_env import EvalEnv
 

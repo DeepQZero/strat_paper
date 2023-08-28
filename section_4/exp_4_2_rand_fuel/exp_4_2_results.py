@@ -17,7 +17,9 @@ def main():
     i = 0
     done = False
     reward_stats = []
+    turn_stats = []
     num_captures = 0
+    num_turns = 0
     env.reset()
     while i < NUM_EPISODES:
         if (i % 100) == 0:
@@ -29,13 +31,23 @@ def main():
             if env.is_capture():
                 print("CAPTURE")
                 num_captures += 1
+            num_turns += 1
         state, _ = env.reset()
         done = False
         i += 1
+        turn_stats.append(num_turns)
+        num_turns = 0
     print("Average reward: ", np.average(reward_stats))
-    exp_data = {"reward_stats": reward_stats, "num_captures": num_captures}
+    print("Average number of turns: ", np.average(turn_stats))
+    exp_data = {"reward_stats": reward_stats, "num_captures": num_captures, "num_turns": turn_stats}
     pickle.dump(exp_data, open("exp_4_2_data.pkl", "wb"))
     return
 
+def testing():
+    exp_data = pickle.load(open("exp_4_2_data.pkl", "rb"))
+    print("Average reward: ", np.average(exp_data["reward_stats"]))
+    print("Average number of turns: ", np.average(exp_data["num_turns"]))
+    print("Num captures: ", exp_data["num_captures"])
+
 if __name__ == "__main__":
-    main()
+    testing()

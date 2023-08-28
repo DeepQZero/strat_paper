@@ -68,7 +68,7 @@ def stacked_density_plot():
     right = dict()
     left = dict()
     for key in new_result_hist.keys():
-        if key == 50000:
+        if key > 50000:
             break
         no_op[key] = new_result_hist[key]["NO OP"] + new_result_hist[key]["RIGHT"] + new_result_hist[key]["LEFT"]
         right[key] = new_result_hist[key]["RIGHT"] + new_result_hist[key]["LEFT"]
