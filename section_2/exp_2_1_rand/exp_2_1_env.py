@@ -1,19 +1,21 @@
+import os
+import sys
 import copy
+
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
 
 import numpy as np
 
+from exp_2_space_env import Env
 from lib import dynamics as dyn
 
 
-class BaseSpaceEnv:
+class BaseSpaceEnv(Env):
     def __init__(self, step_len: int = 10800, dis: int = 180,
-                 max_turns: int = 4*28) -> None:
-        self.DIS = dis
-        self.UP_LEN = step_len / dis
-        self.MAX_TURNS = max_turns
-        self.mobile = None
-        self.base = None
-        self.time_step = None
+                 max_turns: int = 4*28):
+        super().__init__(step_len=step_len, dis=dis, max_turns=max_turns)
 
     def reset(self) -> np.ndarray:
         """Resets environment and returns observation per Gym Standard."""
@@ -52,6 +54,3 @@ class BaseSpaceEnv:
         else:
             return 0.0
 
-    def prop_unit(self, unit: np.ndarray) -> np.ndarray:
-        """Propagates a given unit state forward one time step."""
-        return dyn.propagate(unit[0:4], self.DIS, self.UP_LEN)

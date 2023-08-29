@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 
 from lib import dynamics as dyn
-from experiments.section_2.exp_2_1_rand.exp_2_1_env import BaseSpaceEnv
+from exp_2_1_env import BaseSpaceEnv
 
 
 def one_episode(params):
