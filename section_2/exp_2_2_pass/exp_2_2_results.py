@@ -1,11 +1,17 @@
 from multiprocessing import Pool
 import time
 import pickle
+import os
+import sys
+
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
 
 import numpy as np
 
 from lib import dynamics as dyn
-from experiments.section_2.exp_2_1_rand.exp_2_1_env import BaseSpaceEnv
+from exp_2_1_rand.exp_2_1_env import BaseSpaceEnv
 
 
 def one_episode(params):
