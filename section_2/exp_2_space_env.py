@@ -23,7 +23,7 @@ class Env(gym.Env):
         self.drifting = drifting
         self.capture_reward = capture_reward
         self.observation_space = gym.spaces.Box(-1000, 1000, shape=(8,))
-        self.action_space = gym.spaces.Box(0, 10.0, shape=(2,))
+        self.action_space = gym.spaces.Box(0.0, 10.0, shape=(2,))
 
     def reset(self, seed=None, options=None) -> tuple:
         """Resets environment and returns observation per Gym Standard."""
@@ -102,9 +102,10 @@ class Env(gym.Env):
         return -1 * dyn.vec_norm(action)/self.MAX_FUEL * self.FUEL_MULTIPLIER
 
     def det_term_rew(self) -> float:
-        if self.is_capture() and self.capture_reward:
+        if self.is_capture():
             print("CAPTURE")
-            return 10.0
+            if self.capture_reward:
+                return 10.0
         elif self.is_timeout():
             return 0.0
         else:
