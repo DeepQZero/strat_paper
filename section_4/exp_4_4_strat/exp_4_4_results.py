@@ -10,6 +10,7 @@ sys.path.append(parent)
 import numpy as np
 
 from exp_4_space_env import Env
+from exp_4_cluster_env import ClusterEnv
 from lib import dynamics as dyn
 
 def fill_state_buffer():

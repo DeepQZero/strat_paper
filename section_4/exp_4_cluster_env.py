@@ -1,13 +1,15 @@
-import numpy as np
-from exp_4_temp_env import Env
-from lib import dynamics as dyn
+from multiprocessing import Pool
 
+import numpy as np
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
+import gymnasium as gym
 
+from exp_4_space_env import Env
+from lib import dynamics as dyn
 
-class ClusterEnv:
-    def __init__(self, cluster_epis=100, num_clusters=50):
+class ClusterEnv(gym.Env):
+    def __init__(self, cluster_epis=1000, num_clusters=50):
         self.env = Env()
         self.state_buffer = []
         self.CLUSTER_EPIS = cluster_epis
@@ -15,29 +17,55 @@ class ClusterEnv:
         self.clusters = []
         self.num_resets = 0
         self.fig_counter = 0
+        self.state = None
+        self.current_trajectory = []
+        self.observation_space = self.env.observation_space
+        self.action_space = self.env.action_space
 
-    def reset(self):
-        if (self.num_resets % 100) == 0 and self.num_resets > 0:
+    def reset(self, seed=None, options=None):
+        if (self.num_resets % self.CLUSTER_EPIS) == 0: #and self.num_resets > 0:
             self.cluster()
         if len(self.clusters) == 0:
-            state = self.env.reset()
+            state, _ = self.env.reset()
         else:
             if np.random.uniform(0, 1) < 0.5:
-                state = self.env.reset()
+                state, _ = self.env.reset()
             else:
                 start_state = self.sample_start_state()
-                state = self.env.det_reset_helper(start_state)
+                state, _ = self.env.det_reset_helper(start_state)
         self.num_resets += 1
-        return state
+        self.state = state
+        self.current_trajectory = []
+        return self.det_obs(self.state), None
+
+    def det_obs(self, state) -> np.ndarray:
+        """Returns observation per Gym standard."""
+        # distance from GEO, velocity vector, angle from enemy base
+        # rotate observations so the enemy base is always at zero
+        # TODO: rotate if something doesn't work. Maybe rendering
+        mobile_pos = (state[0:2] - dyn.GEO) / 5e6
+        mobile_vel = (state[2:4]) / dyn.BASE_VEL_Y
+        enemy_pos  = (state[8:10] - dyn.GEO) / 5e6
+        return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [state[12]], [state[13]]))
 
     def step(self, action):
-        state, reward, done, info = self.env.step(action)
+        '''for u in [4, 5, 6, 7]:
+            if (((self.MAX_FUEL - self.state[13]) / self.MAX_FUEL) < ((8 - u) * 0.125) + 0.02) and (
+                    dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (u * np.pi / 8)):
+                action = np.array([0.0, 0.0])'''
+        state, reward, done, _, info = self.env.step(action)
         self.filter_state(state)
-        return state, reward, done, info
+        self.state = state
+        self.current_trajectory.append(state)
+        if self.env.is_capture():
+            print("CAPTURE TRAJECTORY")
+            #print(self.current_trajectory)
+        return self.det_obs(self.state), reward, done, False, info
 
     def hard_reset(self):
         self.state_buffer = []
         self.clusters = []
+        self.current_trajectory = []
         self.num_resets = 0
 
     def filter_state(self, state):
@@ -53,6 +81,9 @@ class ClusterEnv:
         # if in_zone and good_fuel and good_turn:
         #     self.state_buffer.append(state)
         if in_zone and good_fuel and good_turn:
+            #print("STATE HAS BEEN APPENDED")
+            distance = dyn.vec_norm(state[0:2] - state[8:10])
+            #print(angle_left_proportion, fuel_left_proportion, turn_left_proportion, distance)
             self.state_buffer.append(state)
 
     def sample_start_state(self):
@@ -66,7 +97,7 @@ class ClusterEnv:
         for i, state in enumerate(self.state_buffer):
             candidate_states[i, 0] = (dyn.vec_norm(state[0:2]) - dyn.GEO) / 10e6
             candidate_states[i, 1] = dyn.abs_angle_diff(state[0:2], state[8:10]) / np.pi
-        if candidate_states.shape[0] < self.NUM_CLUSTERS:
+        if len(self.state_buffer) < self.NUM_CLUSTERS:
             self.clusters = []
             print("FAILED TO FIND ANY STATES")
         else:
@@ -84,7 +115,7 @@ class ClusterEnv:
                 for s in cluster:
                     pos = (dyn.vec_norm(s[0:2]) - dyn.GEO) / 10e6
                     ang = dyn.abs_angle_diff(s[0:2], s[8:10]) / np.pi
-                    print(pos, ang)
+                    #print(pos, ang)
                     big_list1.append(pos)
                     big_list2.append(ang)
             plt.scatter(big_list1, big_list2)
@@ -93,21 +124,30 @@ class ClusterEnv:
             plt.close()
             self.fig_counter += 1
 
+    def is_capture(self):
+        return self.env.is_capture()
 
-if __name__ == '__main__':
+def main():
     env = ClusterEnv()
     env.hard_reset()
-    for _ in range(int(1e5)):
-        _ = env.reset()
+    for i in range(int(1e5)):
+        if (i % 100) == 0:
+            print(i)
+        _, _ = env.reset()
         done = False
         while not done:
             if np.random.uniform(0, 1) < 0.0:
                 rand_act = np.array([0.0, 0.0])
             else:
-                thrust = 2
+                thrust = 10
                 rand_thrust = np.random.uniform(0, thrust)
                 rand_angle = np.random.uniform(0, 2 * np.pi)
                 rand_act = np.array([np.cos(rand_angle), np.sin(rand_angle)]) * rand_thrust
-            state, reward, done, info = env.step(rand_act)
-            if dyn.vec_norm(state[0:2]-state[8:10]) < 1e5:
+            state, reward, done, _, info = env.step(rand_act)
+            if dyn.vec_norm(state[0:2]-state[8:10]) < 5e5:
                 print("CAPTURE", state)
+
+
+if __name__ == "__main__":
+    main()
+
