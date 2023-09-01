@@ -60,7 +60,7 @@ def rotate(px: float, py: float, angle: float):  # TODO REMOVE!!
 @njit()
 def vec_rotate(vec: np.ndarray, angle: float) -> np.ndarray:
     """Rotates 2D vector counterclockwise in radians."""
-    return np.ndarray([np.cos(angle) * vec[0] - np.sin(angle) * vec[1],
+    return np.array([np.cos(angle) * vec[0] - np.sin(angle) * vec[1],
                        np.sin(angle) * vec[0] + np.cos(angle) * vec[1]])
 
 

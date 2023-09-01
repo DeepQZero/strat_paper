@@ -14,8 +14,8 @@ from lib import dynamics as dyn
 
 
 class EvalEnv(Env):
-    def __init__(self, buffer_type="default"): # Start with the base start state
-        super().__init__()
+    def __init__(self, buffer_type="default", dense_reward=True): # Start with the base start state
+        super().__init__(dense_reward=dense_reward)
         self.unproc_state = np.array([])
         self.state_buffer = []
         self.NUM_STATES = 250
