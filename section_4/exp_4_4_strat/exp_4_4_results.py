@@ -10,15 +10,14 @@ sys.path.append(parent)
 import numpy as np
 
 from exp_4_space_env import Env
-from exp_4_cluster_env import ClusterEnv
 from lib import dynamics as dyn
 
 def fill_state_buffer():
     data_collector = DataCollector()
     env = Env()
-    cluster_env = ClusterEnv()
     i = 0
-    while len(data_collector.start_buffer) < cluster_env.NUM_CLUSTERS:
+    NUM_STATES = 5000 # cluster_env.NUM_CLUSTERS
+    while len(data_collector.start_buffer) < NUM_STATES:
         if (i % 100) == 0:
             print(i)
         if np.random.uniform(0, 1) < 0.5:
@@ -31,45 +30,12 @@ def fill_state_buffer():
             state, _ = env.reset()
         done = False
         while not done:
-            rand_act = data_collector.choose_action(state)
+            rand_act = data_collector.choose_action(env.det_obs_1())
             state, reward, done, _, info = env.step(rand_act)
-            data_collector.filter_state(state)
+            data_collector.filter_state(env.det_obs_1())
         i += 1
-    pickle.dump(data_collector, open("state_buffer.pkl", "wb"))
+    pickle.dump(data_collector, open("exp_4_4_data.pkl", "wb"))
 
-def fill_capture_buffer():
-    data_collector = DataCollector()
-    env = Env()
-    i = 0
-    while len(data_collector.capture_buffer) < 250:
-        if (i % 100) == 0:
-            print(i)
-        if np.random.uniform(0, 1) < 0.5:
-            state = data_collector.buffer_sample()
-            if state is None:
-                state, _ = env.reset()
-            else:
-                for u in data_collector.start_trajectory_buffer:
-                    # data_collector.start_trajectory_buffer.pop(u)
-                    if np.linalg.norm(u[0] - state) < 1e-6:
-                        data_collector.current_trajectory = u[1]
-                env.det_reset_helper(state)
-        else:
-            state, _ = env.reset()
-        done = False
-        while not done:
-            rand_act = data_collector.choose_action(state)
-            state, reward, done, _, info = env.step(rand_act)
-            data_collector.filter_state(state)
-            data_collector.current_trajectory.append(state)
-            if env.is_capture():
-                print("HAD A CAPTURE")
-                print(data_collector.current_trajectory)
-                data_collector.start_trajectory_buffer.append([state, data_collector.current_trajectory])
-                data_collector.capture_buffer.append(data_collector.current_trajectory)
-        data_collector.current_trajectory = []
-        i += 1
-    pickle.dump(data_collector, open("capture_buffer.pkl", "wb"))
 
 class DataCollector:
     def __init__(self):
@@ -127,3 +93,12 @@ class DataCollector:
         rand_angle = np.random.uniform(0, 2 * np.pi)
         rand_act = np.array([np.cos(rand_angle), np.sin(rand_angle)]) * rand_thrust
         return rand_act
+
+
+def main():
+    fill_state_buffer()
+
+
+if __name__ == "__main__":
+    main()
+
