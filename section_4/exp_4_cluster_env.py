@@ -9,8 +9,10 @@ from exp_4_space_env import Env
 from lib import dynamics as dyn
 
 class ClusterEnv(gym.Env):
-    def __init__(self, cluster_epis=1000, num_clusters=50):
-        self.env = Env()
+    def __init__(self, cluster_epis=1000, num_clusters=50, capture_radius=1e6, add_fuel_penalty=True, dense_reward=True,
+                 drifting=True, capture_reward=True):
+        self.env = Env(capture_radius=capture_radius, add_fuel_penalty=add_fuel_penalty, dense_reward=dense_reward,
+                       drifting=drifting, capture_reward=capture_reward)
         self.state_buffer = []
         self.CLUSTER_EPIS = cluster_epis
         self.NUM_CLUSTERS = num_clusters
@@ -23,7 +25,7 @@ class ClusterEnv(gym.Env):
         self.action_space = self.env.action_space
 
     def reset(self, seed=None, options=None):
-        if (self.num_resets % self.CLUSTER_EPIS) == 0: #and self.num_resets > 0:
+        if (self.num_resets % self.CLUSTER_EPIS) == 0:
             self.cluster()
         if len(self.clusters) == 0:
             state, _ = self.env.reset()
@@ -33,6 +35,7 @@ class ClusterEnv(gym.Env):
             else:
                 start_state = self.sample_start_state()
                 state, _ = self.env.det_reset_helper(start_state)
+        state = self.env.det_obs_1()
         self.num_resets += 1
         self.state = state
         self.current_trajectory = []
@@ -49,16 +52,13 @@ class ClusterEnv(gym.Env):
         return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [state[12]], [state[13]]))
 
     def step(self, action):
-        '''for u in [4, 5, 6, 7]:
-            if (((self.MAX_FUEL - self.state[13]) / self.MAX_FUEL) < ((8 - u) * 0.125) + 0.02) and (
-                    dyn.abs_angle_diff(self.state[0:2], self.state[8:10]) > (u * np.pi / 8)):
-                action = np.array([0.0, 0.0])'''
         state, reward, done, _, info = self.env.step(action)
+        state = self.env.det_obs_1()
         self.filter_state(state)
         self.state = state
         self.current_trajectory.append(state)
         if self.env.is_capture():
-            print("CAPTURE TRAJECTORY")
+            print("CAPTURE")
             #print(self.current_trajectory)
         return self.det_obs(self.state), reward, done, False, info
 
@@ -77,9 +77,6 @@ class ClusterEnv(gym.Env):
         turn_left_proportion = (self.env.MAX_TURNS - state[12]) / self.env.MAX_TURNS
         good_fuel = angle_left_proportion < fuel_left_proportion
         good_turn = angle_left_proportion < turn_left_proportion
-        # print(angle_left_proportion, fuel_left_proportion, turn_left_proportion)
-        # if in_zone and good_fuel and good_turn:
-        #     self.state_buffer.append(state)
         if in_zone and good_fuel and good_turn:
             #print("STATE HAS BEEN APPENDED")
             distance = dyn.vec_norm(state[0:2] - state[8:10])

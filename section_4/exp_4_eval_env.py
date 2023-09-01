@@ -1,45 +1,35 @@
-# TODO: First start in the regular start state - look for captures
-# TODO: Fill the state buffer with states in the beginning of capture trajectories
-# Also try with evaluating with the default start state and using a prefilled capture buffer
-# RecurrentPPO policy
-# Potentially decrease the learning rate (default 3e-4)
 import random
 import pickle
+import os
+import sys
+
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+sys.path.append(parent)
 
 import numpy as np
 
-from exp_4_2_env import Env
+from exp_4_space_env import Env
 from lib import dynamics as dyn
-class EvalEnv(Env):
-    def __init__(self): # Start with the base start state
-        super().__init__()
-        self.unproc_state = []
-        self.state_buffer = []
-        self.NUM_STATES = 250
-        self.fill_state_buffer_with_default()
-        #self.fill_state_buffer_with_captures()
 
-    def init2(self): # __init__
+
+class EvalEnv(Env):
+    def __init__(self, buffer_type="default"): # Start with the base start state
         super().__init__()
-        self.NUM_STATES = 250
+        self.unproc_state = np.array([])
         self.state_buffer = []
-        self.unproc_state = []
-        print("FILLING EVAL ENV STATE BUFFER")
-        self.fill_state_buffer()
-        print("DONE FILLING")
+        self.NUM_STATES = 250
+        if buffer_type == "default":
+            self.fill_state_buffer_with_default()
+        elif buffer_type == "captures":
+            self.fill_state_buffer_with_captures()
+        elif buffer_type == "states":
+            self.fill_state_buffer()
 
     def det_obs(self) -> np.ndarray:
         """Returns observation per Gym standard."""
-        # distance from GEO, velocity vector, angle from enemy base
-        # rotate observations so the enemy base is always at zero
-        # TODO: Rotate everything backwards by the angle between enemy position and the normal
-        #       Save actions with a capture trajectory and try those actions in another environment
-        state = super().det_obs()
-        self.unproc_state = state
-        mobile_pos = (state[0:2] - dyn.GEO) / 5e6
-        mobile_vel = (state[2:4]) / dyn.BASE_VEL_Y
-        enemy_pos  = (state[8:10] - dyn.GEO) / 5e6
-        return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [state[12]], [state[13]]))
+        self.unproc_state = super().det_obs_1()
+        return super().det_obs()
 
     def choose_action(self, state):
         # if np.random.uniform(0, 1) < 0.0 or state[13] > self.MAX_FUEL:
@@ -58,7 +48,7 @@ class EvalEnv(Env):
         env = Env()
         while len(self.state_buffer) < self.NUM_STATES:
             default_state, _ = env.reset()
-            self.state_buffer.append(default_state)
+            self.state_buffer.append(env.det_obs_1())
         return
 
     def fill_state_buffer_with_captures(self): # Working
@@ -96,9 +86,6 @@ class EvalEnv(Env):
         return False
 
     def eval_state(self, state):
-        # Take the start state and add random perturbations to the X and Y positions
-        # Like 100 meters off, instead of using fuel
-        # Add a rotating frame (maybe later)
         angle = dyn.abs_angle_diff(state[0:2] * 5e6 + dyn.GEO, state[4:6] * 5e6 + dyn.GEO)
         dist = dyn.vec_norm(state[0:2]) * 5e6
         in_zone = abs(dist - dyn.GEO) < 5e6
@@ -107,9 +94,6 @@ class EvalEnv(Env):
         turn_left_proportion = (self.MAX_TURNS - state[6]) / self.MAX_TURNS
         good_fuel = (angle_left_proportion - 0.05) < fuel_left_proportion
         good_turn = (angle_left_proportion - 0.05) < turn_left_proportion
-        #print(angle_left_proportion, fuel_left_proportion, turn_left_proportion)
-        # if in_zone and good_fuel and good_turn:
-        #     self.state_buffer.append(state)
         if in_zone and good_fuel and good_turn:
             distance = dyn.vec_norm(state[0:2] - state[4:6]) * 5e6
             print(angle_left_proportion, fuel_left_proportion, turn_left_proportion, distance)
@@ -121,3 +105,4 @@ class EvalEnv(Env):
             state_choice = random.choice(self.state_buffer)
             return self.det_reset_helper(state_choice)
         return super().reset()
+

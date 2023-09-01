@@ -35,23 +35,23 @@ class Env(gym.Env):
         self.angle_diff = 1.0
         return self.det_obs(), None
 
-    def det_reset(self, mobile, ret_base, cap_base, time_step, total_fuel) -> np.ndarray:
+    def det_reset(self, mobile, ret_base, cap_base, time_step, total_fuel):
         """Resets environment deterministically."""
         self.mobile = mobile
         self.ret_base = ret_base
         self.cap_base = cap_base
         self.time_step = time_step
         self.total_fuel = total_fuel
-        return self.det_obs()
+        return self.det_obs(), None
 
-    def det_reset_helper(self, state) -> np.ndarray:
+    def det_reset_helper(self, state):
         """Resets environment deterministically."""
         self.mobile = state[0:4]
         self.ret_base = state[4:8]
         self.cap_base = state[8:12]
         self.time_step = state[12]
         self.total_fuel = state[13]
-        return self.det_obs()
+        return self.det_obs(), None
 
     def det_obs_1(self) -> np.ndarray:
         """Returns observation per Gym standard."""
