@@ -6,6 +6,7 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
+import numpy as np
 import seaborn as sns
 import pandas as pd
 import matplotlib
@@ -33,9 +34,12 @@ def proc_results(cluster_list):
             turn_num = (112 - state[12]) * 100/112
             total_fuel = (125 - state[13])*100/125  # Remaining fuel, not fuel used. For color grading
 
+            # TODO IS THIS RIGHT?
             # Rotate the frame so the capture position is always at zero
-            angle = float(dyn.abs_angle_diff(mobile_pos, capture_pos))
-            mobile_pos = dyn.vec_rotate(mobile_pos, angle)
+            BASE_STATE = np.array([-dyn.GEO, 0.0])
+            angle = float(dyn.abs_angle_diff(capture_pos, BASE_STATE))
+            mobile_pos = dyn.vec_rotate(mobile_pos, -angle)
+            capture_pos = dyn.vec_rotate(capture_pos, -angle)
 
             result_dict = {"mobile_pos_x": mobile_pos[0], "mobile_pos_y": mobile_pos[1], "mobile_vel": mobile_vel,
                            "capture_pos": capture_pos, "capture_vel": capture_vel,

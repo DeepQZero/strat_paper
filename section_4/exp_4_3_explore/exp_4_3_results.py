@@ -25,13 +25,17 @@ def main():
         state, _ = env.reset()
         while not done:
             action = np.random.uniform(0, 10, 2)
+            # IF STATEMENT DRIFTING
+            #for u in [4, 5, 6, 7]:
+            #    if (((env.MAX_FUEL - env.det_obs_1()[13]) / env.MAX_FUEL) < ((8 - u) * 0.125) + 0.02) and (
+            #            dyn.abs_angle_diff(env.det_obs_1()[0:2], env.det_obs_1()[8:10]) > (u * np.pi / 8)):
+            #        action = np.array([0.0, 0.0])
             state, reward, done, _, _ = env.step(action)
             if env.eval_state(env.det_obs_1()):
                 print("STATE HAS BEEN APPENDED")
                 state_buffer.append(env.det_obs_1())
     pickle.dump(state_buffer, open("exp_4_3_data.pkl", "wb"))
 
-# TODO: Drifting with the if statements maybe
 
 if __name__ == "__main__":
     main()
