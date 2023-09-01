@@ -19,7 +19,7 @@ def run_drl():
     data_collector = pickle.load(open(pickle_path, "rb"))
     env = ClusterEnv(capture_radius=1e6, add_fuel_penalty=True, dense_reward=True, drifting=True, capture_reward=True)
     env.state_buffer = data_collector.start_buffer
-    tb_log_path = os.path.join("tb_logs", "exp_4_4_logs")
+    tb_log_path = os.path.join("tb_logs", "exp_4_5_logs")
     eval_env = EvalEnv(buffer_type="default")
     eval_callback = EvalCallback(eval_env, best_model_save_path="./logs/",
                              log_path="./logs/", eval_freq=int(1e4), n_eval_episodes=100)
