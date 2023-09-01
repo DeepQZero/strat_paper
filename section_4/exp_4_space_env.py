@@ -23,7 +23,7 @@ class Env(gym.Env):
         self.drifting = drifting
         self.capture_reward = capture_reward
         self.observation_space = gym.spaces.Box(-1000, 1000, shape=(8,))
-        self.action_space = gym.spaces.Box(0, 10.0, shape=(2,))
+        self.action_space = gym.spaces.Box(0.0, 10.0, shape=(2,))
 
     def reset(self, seed=None, options=None) -> tuple:
         """Resets environment and returns observation per Gym Standard."""
@@ -60,13 +60,13 @@ class Env(gym.Env):
 
     def det_obs(self) -> np.ndarray:
         """Returns observation per Gym standard."""
-        # distance from GEO, velocity vector, angle from enemy base
-        # rotate observations so the enemy base is always at zero
+        # distance from GEO, velocity vector, angle from capture base
+        # rotate observations so the capture base is always at zero
         # TODO: rotate if something doesn't work. Maybe rendering
         mobile_pos = (self.mobile[0:2] - dyn.GEO) / 5e6
-        enemy_pos  = (self.cap_base[0:2] - dyn.GEO) / 5e6
+        cap_pos  = (self.cap_base[0:2] - dyn.GEO) / 5e6
         mobile_vel = (self.mobile[2:4]) / dyn.BASE_VEL_Y
-        return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [self.time_step], [self.total_fuel]))
+        return np.concatenate((mobile_pos, mobile_vel, cap_pos, [self.time_step], [self.total_fuel]))
 
     def process_action(self, action):
         angle = (action[1] / 5 * np.pi) + np.random.normal(0, self.SIGMA)
@@ -102,9 +102,10 @@ class Env(gym.Env):
         return -1 * dyn.vec_norm(action)/self.MAX_FUEL * self.FUEL_MULTIPLIER
 
     def det_term_rew(self) -> float:
-        if self.is_capture() and self.capture_reward:
+        if self.is_capture():
             print("CAPTURE")
-            return 10.0
+            if self.capture_reward:
+                return 10.0
         elif self.is_timeout():
             return 0.0
         else:
@@ -130,6 +131,21 @@ class Env(gym.Env):
     def prop_unit(self, unit: np.ndarray) -> np.ndarray:
         """Propagates a given unit state forward one time step."""
         return dyn.propagate(unit[0:4], self.DIS, self.UP_LEN)
+
+    def eval_state(self, state):
+        angle = dyn.abs_angle_diff(state[0:2], state[8:10])
+        dist = dyn.vec_norm(state[0:2])
+        in_zone = abs(dist - dyn.GEO) < 5e6
+        angle_left_proportion = angle / np.pi
+        fuel_left_proportion = (self.MAX_FUEL - state[13]) / (self.MAX_FUEL)
+        turn_left_proportion = (self.MAX_TURNS - state[12]) / self.MAX_TURNS
+        good_fuel = angle_left_proportion < fuel_left_proportion
+        good_turn = angle_left_proportion < turn_left_proportion
+        if in_zone and good_fuel and good_turn:
+            distance = dyn.vec_norm(state[0:2] - state[8:10])
+            print(angle_left_proportion, fuel_left_proportion, turn_left_proportion, distance)
+            return True
+        return False
 
 
 def env_test():

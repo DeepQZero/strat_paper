@@ -60,13 +60,13 @@ class Env(gym.Env):
 
     def det_obs(self) -> np.ndarray:
         """Returns observation per Gym standard."""
-        # distance from GEO, velocity vector, angle from enemy base
-        # rotate observations so the enemy base is always at zero
+        # distance from GEO, velocity vector, angle from capture base
+        # rotate observations so the capture base is always at zero
         # TODO: rotate if something doesn't work. Maybe rendering
         mobile_pos = (self.mobile[0:2] - dyn.GEO) / 5e6
-        enemy_pos  = (self.cap_base[0:2] - dyn.GEO) / 5e6
+        cap_pos  = (self.cap_base[0:2] - dyn.GEO) / 5e6
         mobile_vel = (self.mobile[2:4]) / dyn.BASE_VEL_Y
-        return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [self.time_step], [self.total_fuel]))
+        return np.concatenate((mobile_pos, mobile_vel, cap_pos, [self.time_step], [self.total_fuel]))
 
     def process_action(self, action):
         angle = (action[1] / 5 * np.pi) + np.random.normal(0, self.SIGMA)
