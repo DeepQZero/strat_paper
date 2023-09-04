@@ -22,14 +22,16 @@ def proc_results(result_hist):
         turn_num = (112 - result[12]) * 100/112
         total_fuel = (125 - result[13])*100/125  # Remaining fuel, not fuel used. For color grading
 
+        base_angle = float(dyn.abs_angle_diff(mobile_pos, return_pos))
+        base_distance = np.linalg.norm(mobile_pos) - dyn.GEO
+
         # Rotate the frame so the capture position is always at zero
         BASE_STATE = np.array([-dyn.GEO, 0.0])
-        angle = float(dyn.abs_angle_diff(capture_pos, BASE_STATE))
+        angle = float(dyn.abs_angle_diff(return_pos, BASE_STATE))
         mobile_pos = dyn.vec_rotate(mobile_pos, angle)
-        capture_pos = dyn.vec_rotate(capture_pos, angle)
+        return_pos = dyn.vec_rotate(return_pos, angle)
 
-        base_angle = float(dyn.abs_angle_diff(mobile_pos, capture_pos))
-        base_distance = np.linalg.norm(mobile_pos) - dyn.GEO
+
         result_dict = {"mobile_pos_x": mobile_pos[0], "mobile_pos_y": mobile_pos[1], "mobile_vel": mobile_vel,
                        "capture_pos": capture_pos, "capture_vel": capture_vel,
                        "return_pos": return_pos, "return_vel": return_vel,
