@@ -19,8 +19,8 @@ from exp_4_4_results import DataCollector
 
 def proc_results(cluster_list):
     result_df = pd.DataFrame(columns=["mobile_pos_x", "mobile_pos_y", "mobile_vel", "capture_pos", "capture_vel",
-                                      "return_pos", "return_vel", "turn_num", "total_fuel", "cluster_id"])
-    NUM_STATES = 250
+                                      "return_pos", "return_vel", "turn_num", "total_fuel", "cluster_id", "base_angle", "base_distance"])
+    NUM_STATES = 50
     for i, cluster in enumerate(cluster_list):
         for k, state in enumerate(cluster):
             if k >= NUM_STATES:
@@ -41,10 +41,15 @@ def proc_results(cluster_list):
             mobile_pos = dyn.vec_rotate(mobile_pos, -angle)
             capture_pos = dyn.vec_rotate(capture_pos, -angle)
 
+            base_angle = float(dyn.abs_angle_diff(mobile_pos, capture_pos))
+            base_distance = np.linalg.norm(mobile_pos) - dyn.GEO
+
             result_dict = {"mobile_pos_x": mobile_pos[0], "mobile_pos_y": mobile_pos[1], "mobile_vel": mobile_vel,
                            "capture_pos": capture_pos, "capture_vel": capture_vel,
                            "return_pos": return_pos, "return_vel": return_vel,
-                           "turn_num": turn_num, "total_fuel": total_fuel, "cluster_id": i}
+                           "turn_num": turn_num, "total_fuel": total_fuel, "cluster_id": i,
+                           "base_angle": base_angle, "base_distance": base_distance}
+
             result_df.loc[len(result_df.index)] = result_dict
     return result_df
 
@@ -57,11 +62,11 @@ def main():
     result_df = proc_results(env.clusters)
     norm = matplotlib.colors.Normalize(vmin=result_df["cluster_id"].min(), vmax=result_df["cluster_id"].max())
     sm = plt.cm.ScalarMappable(cmap=palette, norm=norm)
-    ax = sns.scatterplot(x=result_df["mobile_pos_x"], y=result_df["mobile_pos_y"], data=result_df, hue="cluster_id", size="total_fuel")
+    ax = sns.scatterplot(x=result_df["base_angle"], y=result_df["base_distance"], data=result_df, hue="cluster_id", size="total_fuel")
     sm.set_array([])
     ax.figure.colorbar(sm)
     plt.legend([], [], frameon=False)
-    ax.set(xlabel="Mobile X-Position", ylabel="Mobile Y-Position")
+    ax.set(xlabel="Angle to Base", ylabel="Distance to GEO")
     plt.title("State Clusters From Stratified Exploration", pad=20)
     plt.savefig("4_4_fig.png")
     plt.show()

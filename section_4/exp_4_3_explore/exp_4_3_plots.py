@@ -11,7 +11,7 @@ from lib import dynamics as dyn
 
 def proc_results(result_hist):
     result_df = pd.DataFrame(columns=["mobile_pos_x", "mobile_pos_y", "mobile_vel", "capture_pos", "capture_vel",
-                                      "return_pos", "return_vel", "turn_num", "total_fuel"])
+                                      "return_pos", "return_vel", "turn_num", "total_fuel", "base_angle", "base_distance"])
     for result in result_hist:
         mobile_pos = result[0:2]
         mobile_vel = result[2:4]
@@ -28,10 +28,13 @@ def proc_results(result_hist):
         mobile_pos = dyn.vec_rotate(mobile_pos, angle)
         capture_pos = dyn.vec_rotate(capture_pos, angle)
 
+        base_angle = float(dyn.abs_angle_diff(mobile_pos, capture_pos))
+        base_distance = np.linalg.norm(mobile_pos) - dyn.GEO
         result_dict = {"mobile_pos_x": mobile_pos[0], "mobile_pos_y": mobile_pos[1], "mobile_vel": mobile_vel,
                        "capture_pos": capture_pos, "capture_vel": capture_vel,
                        "return_pos": return_pos, "return_vel": return_vel,
-                       "turn_num": turn_num, "total_fuel": total_fuel}
+                       "turn_num": turn_num, "total_fuel": total_fuel,
+                       "base_angle": base_angle, "base_distance": base_distance}
         result_df.loc[len(result_df.index)] = result_dict
     return result_df
 
@@ -40,11 +43,11 @@ def main():
     result_df = proc_results(result_hist)
     norm = matplotlib.colors.Normalize(vmin=result_df["total_fuel"].min(), vmax=result_df["total_fuel"].max())
     sm = plt.cm.ScalarMappable(cmap=palette, norm=norm)
-    ax = sns.scatterplot(x=result_df["mobile_pos_x"], y=result_df["mobile_pos_y"], data=result_df, hue="total_fuel", size="turn_num")
+    ax = sns.scatterplot(x=result_df["base_angle"], y=result_df["base_distance"], data=result_df, hue="total_fuel", size="turn_num")
     sm.set_array([])
     ax.figure.colorbar(sm)
     plt.legend([], [], frameon=False)
-    ax.set(xlabel="Mobile X-Position", ylabel="Mobile Y-Position")
+    ax.set(xlabel="Angle to Base", ylabel="Distance to GEO")
     plt.title("Promising States From Directed Exploration", pad=20)
     plt.savefig("4_3_fig.png")
     plt.show()
@@ -52,3 +55,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -20,7 +20,7 @@ def parse_tensorboard(path, scalars):
     return {k: pd.DataFrame(ea.Scalars(k)) for k in scalars}
 
 def load_experiment():
-    path = r"C:\Users\Kyler\Desktop\GitHub\strat_paper\section_4\exp_4_6_sparse_strat_dense_strat\tb_logs\exp_4_6_logs\PPO_1"
+    path = r"C:\Users\Kyler\Desktop\GitHub\strat_paper\section_4\exp_4_6_sparse_strat\tb_logs\exp_4_6_logs\PPO_1\events.out.tfevents.1693635895.LAPTOP-B318PKJC.19128.0"
     scalars = ["eval/mean_reward", "rollout/ep_rew_mean"]
     exp_dict = parse_tensorboard(path, scalars)
     return exp_dict
