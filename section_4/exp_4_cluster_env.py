@@ -43,13 +43,10 @@ class ClusterEnv(gym.Env):
 
     def det_obs(self, state) -> np.ndarray:
         """Returns observation per Gym standard."""
-        # distance from GEO, velocity vector, angle from enemy base
-        # rotate observations so the enemy base is always at zero
-        # TODO: rotate if something doesn't work. Maybe rendering
         mobile_pos = (state[0:2] - dyn.GEO) / 5e6
         mobile_vel = (state[2:4]) / dyn.BASE_VEL_Y
-        enemy_pos  = (state[8:10] - dyn.GEO) / 5e6
-        return np.concatenate((mobile_pos, mobile_vel, enemy_pos, [state[12]], [state[13]]))
+        return_pos  = (state[8:10] - dyn.GEO) / 5e6
+        return np.concatenate((mobile_pos, mobile_vel, return_pos, [state[12]], [state[13]]))
 
     def step(self, action):
         state, reward, done, _, info = self.env.step(action)

@@ -61,6 +61,8 @@ def main():
     env.NUM_CLUSTERS = 10
     env.cluster()
     result_df = proc_results(env.clusters)
+    print(result_df["total_fuel"].min())
+    print(result_df["total_fuel"].max())
     norm = matplotlib.colors.Normalize(vmin=result_df["cluster_id"].min(), vmax=result_df["cluster_id"].max())
     sm = plt.cm.ScalarMappable(cmap=palette, norm=norm)
     ax = sns.scatterplot(x=result_df["base_angle"], y=result_df["base_distance"], data=result_df, hue="cluster_id", size="total_fuel")

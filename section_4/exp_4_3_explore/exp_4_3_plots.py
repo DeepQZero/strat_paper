@@ -43,6 +43,8 @@ def proc_results(result_hist):
 def main():
     result_hist = pickle.load(open("exp_4_3_data.pkl", "rb"))
     result_df = proc_results(result_hist)
+    print(result_df["turn_num"].min()*112/100)
+    print(result_df["turn_num"].max()*112/100)
     norm = matplotlib.colors.Normalize(vmin=result_df["total_fuel"].min(), vmax=result_df["total_fuel"].max())
     sm = plt.cm.ScalarMappable(cmap=palette, norm=norm)
     ax = sns.scatterplot(x=result_df["base_angle"], y=result_df["base_distance"], data=result_df, hue="total_fuel", size="turn_num")
