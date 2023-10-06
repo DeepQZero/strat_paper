@@ -1,2 +1,2 @@
 # strat_paper
-Code for SSS paper
+Code for St3 paper
